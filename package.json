@@ -1,0 +1,10 @@
+{
+  "name": "sod-analyzer-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Server-side SOD/PAM rule engines — kept out of the browser bundle on purpose.",
+  "main": "index.js",
+  "engines": {
+    "node": ">=18"
+  }
+}
