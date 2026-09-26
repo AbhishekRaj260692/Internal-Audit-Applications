@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Access Governance Analysis Engine · PMWeb & Oracle Fusion</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --navy:#1e293b;--navy2:#0f172a;
+  --teal:#0e7490;--teal-bg:#e0f7fa;
+  --purple:#6d28d9;--purple-bg:#ede9fe;
+  --blue:#1d4ed8;--blue-bg:#dbeafe;
+  --red:#b91c1c;--red-bg:#fee2e2;
+  --amber:#b45309;--amber-bg:#fef3c7;
+  --green:#065f46;--green-bg:#d1fae5;
+  --slate:#94a3b8;--lgrey:#e2e8f0;
+  --body:#f7f8fa;--surface:#fff;
+  --text:#1e2530;--text2:#5b6472;--border:#e5e9ef;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--body);color:var(--text);font-size:14px}
+.hdr{background:var(--navy);height:52px;display:flex;align-items:center;gap:12px;padding:0 20px;position:sticky;top:0;z-index:100}
+.logo{width:30px;height:30px;background:var(--teal);border-radius:7px;display:grid;place-items:center}
+.logo svg{width:17px;height:17px;fill:#fff}
+.hdr-t{font-size:15px;font-weight:600;color:#fff}
+.hdr-s{margin-left:auto;font-size:11px;color:var(--slate)}
+.tabs{background:var(--navy2);display:flex;padding:0 20px;gap:2px;border-bottom:1px solid #1e3a5f}
+.tab{padding:10px 22px;font-size:13px;font-weight:500;color:var(--slate);cursor:pointer;border-bottom:3px solid transparent;transition:.15s}
+.tab.active{color:#fff;border-color:var(--teal)}
+.layout{display:grid;grid-template-columns:295px 1fr;height:calc(100vh - 98px)}
+.side{background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;padding:16px}
+.content{overflow-y:auto;padding:20px}
+.lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text2);margin-bottom:6px;display:block}
+.ub{margin-bottom:14px}
+.dz{border:1.5px dashed var(--border);border-radius:9px;padding:14px;text-align:center;cursor:pointer;transition:.15s;position:relative;background:var(--body)}
+.dz input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.dz:hover,.dz.ov{border-color:var(--teal);background:var(--teal-bg)}
+.dz-ico{font-size:22px;margin-bottom:4px}
+.dz p{font-size:12px;color:var(--text2);line-height:1.4}
+.fpill{display:flex;align-items:center;gap:6px;background:var(--teal-bg);border:1px solid var(--teal);border-radius:6px;padding:4px 8px;margin-top:6px;font-size:11px;color:var(--teal)}
+.fpill button{margin-left:auto;background:none;border:none;cursor:pointer;font-size:14px;color:inherit}
+.note{font-size:11px;color:var(--text2);line-height:1.5;padding:8px 10px;background:var(--blue-bg);border-left:3px solid var(--blue);border-radius:4px;margin-top:10px}
+.btn-run{width:100%;padding:10px;background:var(--teal);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-top:10px;transition:.15s}
+.btn-run:hover{background:#0c6578}
+.lib-hdr{display:flex;justify-content:space-between;cursor:pointer;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}
+.lib-tags{display:flex;flex-wrap:wrap;gap:3px;margin-top:5px}
+.lib-tag{font-size:10px;padding:2px 6px;background:var(--lgrey);border-radius:4px;color:var(--text2)}
+.lib-tag.c{background:var(--red-bg);color:var(--red)}
+.lib-tag.h{background:var(--amber-bg);color:var(--amber)}
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.kpi .kl{font-size:11px;color:var(--text2);margin-bottom:3px}
+.kpi .kv{font-size:26px;font-weight:700}
+.kpi .ks{font-size:11px;color:var(--text2);margin-top:3px}
+.kpi.kt .kv{color:var(--teal)}.kpi.kp .kv{color:var(--purple)}.kpi.kh .kv{color:var(--amber)}.kpi.kc .kv{color:var(--red)}
+.kpi-row2{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.cgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}
+.cbox{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px}
+.cbox h3{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:10px}
+.cbox canvas{max-height:190px}
+.ctrl{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.ctrl input,.ctrl select{padding:6px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--surface);color:var(--text)}
+.ctrl input{flex:1;min-width:180px}
+.tbl-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#f1f5f9;padding:8px 11px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);border-bottom:1px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap}
+th:hover{background:var(--lgrey)}
+td{padding:9px 11px;border-bottom:1px solid #f1f5f9;vertical-align:top}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#f8fafc}
+.badge{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600}
+.badge.Critical{background:var(--red-bg);color:var(--red)}
+.badge.High{background:var(--amber-bg);color:var(--amber)}
+.badge.Medium{background:var(--amber-bg);color:var(--amber)}
+.badge.Low{background:var(--purple-bg);color:var(--purple)}
+.badge.Safe{background:var(--green-bg);color:var(--green)}
+.chip{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:600;margin:1px}
+.chip.p{background:var(--red-bg);color:var(--red)}
+.chip.s{background:var(--amber-bg);color:var(--amber)}
+.chip.x{background:var(--purple-bg);color:var(--purple)}
+.chip.e{background:#ffe4e6;color:#9f1239}
+.chip.g{background:#e0e7ff;color:#3730a3}
+.chip.t{background:#f1f5f9;color:#334155;border:1px solid var(--border)}
+.chip.b{background:#fef9c3;color:#854d0e}
+.chip.sv{background:#dcfce7;color:#166534}
+.priv-list{font-size:11px;color:var(--text2);line-height:1.5;max-width:320px}
+.rec{font-size:11px;background:var(--blue-bg);color:#1e40af;padding:3px 8px;border-radius:4px;display:inline-block;line-height:1.4}
+.exp-bar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.btn-exp{padding:7px 14px;border-radius:6px;border:1px solid var(--border);background:var(--surface);font-size:13px;cursor:pointer;font-weight:500;color:var(--text);transition:.15s}
+.btn-exp:hover{background:var(--lgrey)}
+.btn-exp.primary{background:var(--teal);color:#fff;border-color:var(--teal)}
+.btn-exp.primary:hover{background:#0c6578}
+.empty{text-align:center;padding:60px 20px;color:var(--text2)}
+.empty-ico{font-size:44px;opacity:.3;margin-bottom:12px}
+.empty h2{font-size:16px;color:var(--text);margin-bottom:6px}
+.pag{display:flex;gap:4px;margin-top:10px;align-items:center;font-size:13px}
+.pbtn{padding:4px 10px;border:1px solid var(--border);border-radius:6px;cursor:pointer;background:var(--surface)}
+.pbtn.a{background:var(--teal);color:#fff;border-color:var(--teal)}
+.sh{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text2);padding-bottom:6px;border-bottom:1px solid var(--border);margin-bottom:12px}
+.gov-banner{background:var(--amber-bg);border:1px solid var(--amber);border-radius:8px;padding:10px 14px;font-size:12px;color:#7c3305;margin-bottom:14px;line-height:1.5}
+.gov-banner b{color:var(--amber)}
+.gov-list{margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px}
+.gov-list table{font-size:12px}
+.opt-row{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);margin-top:6px}
+.opt-row input{width:auto}
+.cfg-box{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.cfg-box textarea{width:100%;font-size:11px;padding:6px;border:1px solid var(--border);border-radius:6px;min-height:48px;font-family:inherit;resize:vertical}
+.cfg-box input[type=number]{width:70px;padding:4px 6px;border:1px solid var(--border);border-radius:5px;font-size:11px}
+.cfg-inline{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);margin-top:6px}
+.finding-card{background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--red);border-radius:8px;padding:12px 14px;margin-bottom:10px}
+.finding-card.High,.finding-card.Medium{border-left-color:var(--amber)}
+.finding-card.Low{border-left-color:var(--purple)}
+.finding-card .ft{font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px}
+.finding-card .fmeta{font-size:11px;color:var(--text2);margin-top:4px;line-height:1.6}
+.finding-card .fusers{font-size:11px;color:var(--text);margin-top:6px;background:var(--body);padding:6px 8px;border-radius:6px;max-height:80px;overflow-y:auto}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--navy);color:#fff;padding:12px 18px;border-radius:8px;font-size:13px;box-shadow:0 6px 20px rgba(0,0,0,.25);z-index:999;max-width:360px;line-height:1.5}
+.toast.err{background:var(--red)}
+@media(max-width:900px){.layout{grid-template-columns:1fr}.kpi-row{grid-template-columns:repeat(3,1fr)}.kpi-row2{grid-template-columns:repeat(2,1fr)}.cgrid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header class="hdr">
+  <div class="logo"><svg viewBox="0 0 24 24"><path d="M12 2L3 7v10l9 5 9-5V7z"/></svg></div>
+  <span class="hdr-t">Access Governance Analysis Engine</span>
+  <span class="hdr-s">PMWeb &amp; Oracle Fusion · Internal Audit</span>
+</header>
+<div class="tabs">
+  <div class="tab active" onclick="switchSys('pmweb')">PMWeb</div>
+  <div class="tab" onclick="switchSys('oracle')">Oracle Fusion</div>
+</div>
+<div class="layout">
+<aside class="side">
+  <div id="pm-side">
+    <div class="ub">
+      <span class="lbl">Input 1 — User Access Report</span>
+      <div class="dz" ondragover="dzO(event,'dz-pm1')" ondragleave="dzL('dz-pm1')" ondrop="dzD(event,'pm1')" id="dz-pm1">
+        <input type="file" accept=".csv,.xlsx,.xls" onchange="onF(this,'pm1')">
+        <div class="dz-ico">👤</div>
+        <p><b>Required columns:</b><br>ID · Name · License Type · Group · Inactive</p>
+      </div>
+      <div id="pill-pm1"></div>
+    </div>
+    <div class="ub">
+      <span class="lbl">Input 2 — Group Access Matrix (Custom + System tabs)</span>
+      <div class="dz" ondragover="dzO(event,'dz-pm2')" ondragleave="dzL('dz-pm2')" ondrop="dzD(event,'pm2')" id="dz-pm2">
+        <input type="file" accept=".csv,.xlsx,.xls" onchange="onF(this,'pm2')">
+        <div class="dz-ico">📊</div>
+        <p><b>Rows</b> = Forms/Modules<br><b>Columns</b> = Groups<br><b>Values</b> = Permission levels (Read/View, Write/Edit, Delete, Full Control)<br>Both the <b>Custom</b> and <b>System</b> tabs are read automatically if present.</p>
+      </div>
+      <div id="pill-pm2"></div>
+    </div>
+    <div class="ub">
+      <span class="lbl">Input 3 — Admin Credentials Sheet (optional)</span>
+      <div class="dz" ondragover="dzO(event,'dz-pm3')" ondragleave="dzL('dz-pm3')" ondrop="dzD(event,'pm3')" id="dz-pm3">
+        <input type="file" accept=".csv,.xlsx,.xls" onchange="onF(this,'pm3')">
+        <div class="dz-ico">🗝️</div>
+        <p><b>Columns:</b> Admin Credential · Persons With Access</p>
+      </div>
+      <div id="pill-pm3"></div>
+    </div>
+    <div class="cfg-box">
+      <span class="lbl" style="margin-bottom:4px">Approved / Internal Domains</span>
+      <textarea id="cfg-domains" placeholder="one per line, e.g. damacgroup.com">damacgroup.com
+damacsharedservices.com
+loams.com
+whitespot.ae</textarea>
+      <div class="opt-row" style="color:#b45309">⚠ loams.com is a best-guess domain (not confirmed) — verify and edit if different</div>
+      <div class="opt-row"><input type="checkbox" id="opt-internal-auto"> auto-detect instead (ignore list above)</div>
+      <div class="cfg-inline">Admin-equivalent group score ≥ <input type="number" id="cfg-threshold" value="100" min="1"> (sum of weighted permissions across critical modules)</div>
+    </div>
+    <div class="note">PMWeb grants access primarily through <b>group membership</b>, but rights can also be extended through Conditional Security, Project Users, Form Builder, workflow participation and user-specific permissions. This engine analyses the supplied group-access matrix only — findings below are <b>confirmed group-based access</b>; a blank group or "Safe" rating does not prove zero effective access.</div>
+  </div>
+  <div id="or-side" style="display:none">
+    <div class="ub">
+      <span class="lbl">Input 1 — User and Roles</span>
+      <div class="dz" ondragover="dzO(event,'dz-or1')" ondragleave="dzL('dz-or1')" ondrop="dzD(event,'or1')" id="dz-or1">
+        <input type="file" accept=".csv,.xlsx,.xls" onchange="onF(this,'or1')">
+        <div class="dz-ico">👤</div>
+        <p><b>Columns:</b> User Name · Department · Location · Assigned Role Name · Assigned Role Display Name · Policy Stripe</p>
+      </div>
+      <div id="pill-or1"></div>
+    </div>
+    <div class="ub">
+      <span class="lbl">Input 2 — Role-to-Privilege Mapping</span>
+      <div class="dz" ondragover="dzO(event,'dz-or2')" ondragleave="dzL('dz-or2')" ondrop="dzD(event,'or2')" id="dz-or2">
+        <input type="file" accept=".csv,.xlsx,.xls" onchange="onF(this,'or2')">
+        <div class="dz-ico">🔐</div>
+        <p><b>Columns:</b> Job Role Name · Privilege Name</p>
+      </div>
+      <div id="pill-or2"></div>
+    </div>
+    <div class="cfg-box">
+      <span class="lbl" style="margin-bottom:4px">Role Explosion Threshold (roles/user)</span>
+      <input type="number" id="cfg-or-explosion" value="25" min="1" style="width:80px">
+      <div class="cfg-inline" style="display:none"><input type="number" id="cfg-or-threshold" value="100" min="1"></div>
+    </div>
+    <div class="note" id="or-lib-note">238 privilege patterns across 4 priority tiers (67 Critical + 117 High + 52 Medium + 2 Low) and SEC, FIN, ATR, PROC, SCM, HCM, FSM, BPM, INT and BI domains, each tagged with a detection Category (Direct Admin, Admin-Equivalent Masters/Workflow, Payables/Payroll/Procurement Risk, Integration/Service Access, Reporting/BI Access, Privileged Role), plus a 12-test audit-analytics engine (privileged roles, role explosion, sensitive privileges, admin-equivalent roles/masters, super-user/cross-domain SoD, service/generic accounts, procurement/payables/payroll SoD, access-certification risk).</div>
+  </div>
+  <button class="btn-run" id="btn-run" onclick="run()">▶ Run Analysis</button>
+</aside>
+<main class="content">
+  <div id="empty-st" class="empty">
+    <div class="empty-ico">🔍</div>
+    <h2>Upload files and click Run Analysis</h2>
+    <p>PMWeb: group-based effective access, weighted admin-equivalent scoring, external/generic/service/test account detection, SoD and contractor-invoice rules<br>Oracle: curated privilege library, EXACT NAME MATCH ONLY. Risk follows the priority matrix directly — a Critical/High/Medium/Low finding traces back to a specific matched privilege, visible in the Critical/High Risk Drivers panel. Procurement Risk and Admin-Equivalent only trigger on a genuine multi-privilege combination; a Multi-Privilege SoD Conflict finding flags accounts spanning 3+ risk domains at once (end-to-end access).</p>
+  </div>
+  <div id="results" style="display:none">
+    <div class="exp-bar">
+      <button class="btn-exp primary" onclick="exportAnnexures()">⬇ Excel Annexures (multi-tab)</button>
+      <button class="btn-exp" onclick="expHTML()">⬇ HTML Report</button>
+      <button class="btn-exp" onclick="exportAIReportInstructions()" style="background:#0e7490;color:#fff;border-color:#0e7490">🤖 AI Report Instructions</button>
+      <button class="btn-exp" onclick="exportJSONForClaude()">📦 Export JSON (for Claude)</button>
+      <button class="btn-exp" onclick="window.print()">⬇ PDF</button>
+    </div>
+    <div id="pm-diag-slot"></div>
+    <div id="gov-banner-slot"></div>
+    <div class="kpi-row" id="kpis"></div>
+    <div class="kpi-row2" id="kpis2"></div>
+    <div class="cgrid">
+      <div class="cbox" id="box-priv"><h3>Privilege Mix</h3><canvas id="cPriv"></canvas></div>
+      <div class="cbox" id="box-risk"><h3>User Risk Distribution</h3><canvas id="cRisk"></canvas></div>
+      <div class="cbox" id="box-roles"><h3>Top Groups / Roles by Users</h3><canvas id="cRoles"></canvas></div>
+      <div class="cbox" id="box-flags"><h3>Top Critical Privilege Flags</h3><canvas id="cFlags"></canvas></div>
+    </div>
+    <div id="admin-cred-slot"></div>
+    <div id="critical-drivers-slot"></div>
+    <div id="pm-priv-slot"></div>
+    <div class="sh" id="findings-hdr" style="display:none">Audit Findings — Narrative Summary</div>
+    <div id="audit-findings"></div>
+    <div class="sh">User-Level Access Report</div>
+    <div class="ctrl">
+      <input id="q" placeholder="Search user, role, privilege…" oninput="renderT()">
+      <select id="rf" onchange="renderT()"><option value="">All risk levels</option><option>Critical</option><option>High</option><option>Medium</option><option>Low</option><option>Safe</option></select>
+      <select id="ff" onchange="renderT()"></select>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr id="thead-row">
+          <th onclick="srt('user')">User ↕</th>
+          <th>Role</th>
+          <th>Privilege Names</th>
+          <th onclick="srt('risk')">Severity ↕</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="pag" id="pag"></div>
+    <div class="gov-list" id="gov-evidence"></div>
+  </div>
+</main>
+</div>
+<script>
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ORACLE FUSION SoD PRIVILEGE LIBRARY (final replacement set — 183 entries)
+// 56 Critical, 83 High, 42 Medium, 2 Low across BI/Reporting, Financials,
+// Financials (Tax), Functional Setup Manager, HCM/Payroll, Integrations,
+// Procurement, Risk Management Cloud, Security Administration and
+// Workflow/Approvals. All prior library versions have been fully replaced.
+// Matching is EXACT NAME ONLY (case-insensitive) — no substring/keyword
+// fallback. Category (Direct Admin, Admin-Equivalent (Masters/Workflow),
+// Payroll Risk, Procurement Risk, Privileged Role, Integration/Service
+// Access, Reporting/BI Access) is informational for most privileges; for
+// Procurement Risk and Admin-Equivalent specifically, the actual escalation
+// to Critical now requires a genuine multi-privilege COMBINATION (see the
+// ORACLE FUSION ACCESS REVIEW ENGINE section below), not a single tagged
+// privilege.
+// Fields:
+//   n   = privilege/keyword name
+//   bp  = pillar/business-process code
+//   p   = Critical | High | Medium | Low
+//   cat = detection category
+//   w   = short description of why the privilege is sensitive
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// ═══════════════════════════════════════════════════════════════
+// PAM RULE ENGINE — now server-side (Azure Function /api/pam-analyze).
+// The Oracle privilege library, PMWeb DAMAC-tailored findings, and all
+// detection functions are no longer shipped to the browser. This file
+// gathers raw uploaded rows + config options and calls the API.
+// ═══════════════════════════════════════════════════════════════
+let sys="pmweb",raw={},results=[],charts={},govNotes={},orgDomainAuto=null,pmAssessment=null,orAssessment=null,pmDiagnostic=null;
+let sortCol="risk",sortAsc=false,page=1;
+const PAGE=25;
+let orRolePrivCounts={}; // distinct-role -> {critCount,highCount} used for "Privileged Roles" KPI
+let orDirectAdminTop=null; // {user, count} for "Direct Admin (Most Privileges)" KPI
+
+function switchSys(s){
+  sys=s;
+  document.querySelectorAll(".tab").forEach((el,i)=>el.classList.toggle("active",["pmweb","oracle"][i]===s));
+  ["pm-side","or-side"].forEach(id=>document.getElementById(id).style.display=(id.startsWith(s.slice(0,2))?"":"none"));
+  ["lib-pm","lib-or"].forEach(id=>document.getElementById(id).style.display=(id.endsWith(s.slice(0,2))?"":"none"));
+  document.getElementById("results").style.display="none";
+  const es=document.getElementById("empty-st");
+  es.style.display="";
+  es.innerHTML=`<div class="empty-ico">🔍</div><h2>Upload files and click Run Analysis</h2><p>PMWeb: group-based effective access, weighted admin-equivalent scoring, external/generic/service/test account detection, SoD and contractor-invoice rules<br>Oracle: 183-entry curated privilege library, EXACT NAME MATCH ONLY (56 Critical + 83 High + 42 Medium + 2 Low, each categorized). Risk follows the priority matrix directly — a Critical/High/Medium/Low finding traces back to a specific matched privilege, visible in the new Critical/High Risk Drivers panel. Procurement Risk and Admin-Equivalent only trigger on a genuine multi-privilege combination; a Multi-Privilege SoD Conflict finding flags accounts spanning 3+ risk domains at once (end-to-end access).</p>`;
+  const btn=document.getElementById("btn-run");
+  if(btn){btn.disabled=false;btn.textContent="▶ Run Analysis";}
+  runInProgress=false;
+  toggleChartBoxes();
+  updateTableHeader();
+  const privSlot=document.getElementById("pm-priv-slot");
+  if(privSlot)privSlot.innerHTML="";
+  const diagSlot=document.getElementById("pm-diag-slot");
+  if(diagSlot)diagSlot.innerHTML="";
+}
+function toggleChartBoxes(){
+  // Oracle view: only the two requested donuts (Privilege Mix, User Risk Distribution).
+  // PMWeb view: keep the original 4-chart layout.
+  const showExtra = sys!=="oracle";
+  const roles=document.getElementById("box-roles"), flags=document.getElementById("box-flags");
+  if(roles)roles.style.display=showExtra?"":"none";
+  if(flags)flags.style.display=showExtra?"":"none";
+}
+function updateTableHeader(){
+  const row=document.getElementById("thead-row");
+  if(!row)return;
+  const roleLabel = sys==="oracle" ? "Role" : "Group";
+  const formsHeader = sys==="pmweb" ? `<th>Form(s)</th>` : "";
+  row.innerHTML=`<th onclick="srt('user')">User ↕</th><th>${roleLabel}</th>${formsHeader}<th>Privilege Names</th><th onclick="srt('risk')">Severity ↕</th>`;
+}
+function dzO(e,id){e.preventDefault();document.getElementById(id).classList.add("ov")}
+function dzL(id){document.getElementById(id).classList.remove("ov")}
+function dzD(e,slot){e.preventDefault();const f=e.dataTransfer.files[0];if(f)loadF(f,slot)}
+function onF(inp,slot){if(inp.files[0])loadF(inp.files[0],slot)}
+function loadF(f,slot){
+  const ext=f.name.split(".").pop().toLowerCase();
+  const r=new FileReader();
+  const done=(rows,sheetInfo)=>{
+    raw[slot]=rows;
+    const sheetNote=sheetInfo&&sheetInfo.length>1?` across ${sheetInfo.length} tabs: ${sheetInfo.map(s=>`${s.name} (${s.count})`).join(", ")}`:"";
+    document.getElementById("pill-"+slot).innerHTML=`<div class="fpill">📎 ${f.name} (${rows.length} rows${sheetNote})<button onclick="clr('${slot}')">×</button></div>`;
+  };
+  try{
+    if(ext==="csv"){
+      r.onload=e=>done(Papa.parse(e.target.result,{header:true,skipEmptyLines:true,dynamicTyping:true}).data);
+      r.onerror=()=>toast("Could not read "+f.name+" as CSV.",true);
+      r.readAsText(f);
+    }else{
+      if(typeof XLSX==="undefined"){toast("The Excel reader library (SheetJS) hasn't loaded — check your internet connection.",true);return;}
+      r.onload=e=>{
+        const wb=XLSX.read(e.target.result,{type:"binary"});
+        const sheetInfo=[];
+        let allRows=[];
+        wb.SheetNames.forEach(name=>{
+          const ws=wb.Sheets[name];
+          const rows=XLSX.utils.sheet_to_json(ws,{defval:""});
+          if(rows.length){
+            // Tag each row with its source sheet name (e.g. "Custom"/"System"
+            // tabs in the Group Access Matrix) so downstream analysis can
+            // tell which tab a form came from. "__sheet" is deliberately
+            // excluded from column auto-detection everywhere it's read.
+            rows.forEach(r=>{r.__sheet=name;});
+            allRows=allRows.concat(rows);
+            sheetInfo.push({name,count:rows.length});
+          }
+        });
+        done(allRows,sheetInfo);
+      };
+      r.onerror=()=>toast("Could not read "+f.name+" as Excel.",true);
+      r.readAsBinaryString(f);
+    }
+  }catch(err){toast("Failed to parse "+f.name+": "+err.message,true);}
+}
+function clr(slot){delete raw[slot];document.getElementById("pill-"+slot).innerHTML="";}
+function col(headers,cands){
+  const hl=headers.map(h=>(h||"").toLowerCase().trim());
+  for(const c of cands){const i=hl.findIndex(h=>h.includes(c));if(i>=0)return headers[i];}
+  return null;
+}
+function toast(msg,isErr){
+  const d=document.createElement("div");
+  d.className="toast"+(isErr?" err":"");
+  d.textContent=msg;
+  document.body.appendChild(d);
+  setTimeout(()=>d.remove(),isErr?7000:4000);
+}
+
+// ─── PMWEB ANALYSIS ───
+// ─── PMWEB ANALYSIS — client sends raw rows + config, server matches rules ───
+const API_BASE = '/api';
+
+async function analysePM(usersRaw,matrix,adminSheet){
+  const domTxt=(document.getElementById("cfg-domains").value||"").split("\n").map(s=>s.trim().toLowerCase()).filter(Boolean);
+  const thr=parseInt(document.getElementById("cfg-threshold").value,10);
+  const options={
+    approvedDomains: domTxt,
+    internalAuto: document.getElementById("opt-internal-auto").checked,
+    adminScoreThreshold: isNaN(thr)?100:thr
+  };
+  const resp = await fetch(`${API_BASE}/pam-analyze`,{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ system:'pmweb', usersRaw, matrix, adminSheet, options })
+  });
+  if(!resp.ok){ const e=await resp.json().catch(()=>({})); throw new Error(e.error||`Server returned ${resp.status}`); }
+  const data = await resp.json();
+  pmAssessment = data.assessment;
+  govNotes = data.govNotes;
+  pmDiagnostic = data.pmDiagnostic || null;
+  orgDomainAuto = (data.govNotes && data.govNotes.orgDomainAuto) || orgDomainAuto;
+  return data.results;
+}
+
+// ─── ORACLE ANALYSIS — client sends raw rows + config, server matches rules ───
+async function analyseOR(userRoleRaw,rolePrivRaw){
+  const expThr=parseInt(document.getElementById("cfg-or-explosion").value,10);
+  const options={ roleExplosionThreshold: isNaN(expThr)?25:expThr };
+  const resp = await fetch(`${API_BASE}/pam-analyze`,{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ system:'oracle', userRoleRaw, rolePrivRaw, options })
+  });
+  if(!resp.ok){ const e=await resp.json().catch(()=>({})); throw new Error(e.error||`Server returned ${resp.status}`); }
+  const data = await resp.json();
+  orAssessment = data.assessment;
+  orRolePrivCounts = data.orRolePrivCounts || {};
+  orDirectAdminTop = data.orDirectAdminTop || null;
+  return data.results;
+}
+
+// ─── RUN ────────────────────────────────────────────────────
+let runInProgress=false;
+async function run(){
+  if(runInProgress)return;
+  const btn=document.getElementById("btn-run");
+  const preCheckMsg=sys==="pmweb"
+    ? (!raw["pm1"]?"Upload the User Access Report first.":null)
+    : (!raw["or1"]?"Upload the User and Roles file first.":null);
+  if(preCheckMsg){toast(preCheckMsg,true);return;}
+
+  runInProgress=true;
+  btn.disabled=true;btn.textContent="⏳ Analyzing…";
+  document.getElementById("empty-st").innerHTML=`<div class="empty-ico">⏳</div><h2>Running analysis…</h2><p>Large files (100k+ rows) may take a few seconds — this page has not frozen.</p>`;
+  try{
+    if(sys==="pmweb"){
+      results=await analysePM(raw["pm1"],raw["pm2"]||[],raw["pm3"]||[]);
+      orAssessment=null;
+    }else{
+      if(!raw["or2"]||!raw["or2"].length){toast("Upload the Role-to-Privilege Mapping file for full analysis (Effective Access, Payables/Payroll SoD, Sensitive Privilege tests need it).",true);}
+      results=await analyseOR(raw["or1"],raw["or2"]||[]);
+      pmAssessment=null;
+    }
+    page=1;
+    document.getElementById("empty-st").style.display="none";
+    document.getElementById("results").style.display="";
+    buildFlagFilter();
+    toggleChartBoxes();
+    updateTableHeader();
+    renderKPIs();renderCharts();renderT();renderGovBanner();renderAdminCredPanel();renderCriticalDrivers();renderGovEvidence();renderAuditFindings();renderPMPrivilegedAccess();renderPMDiagnostic();
+  }catch(err){
+    toast("Analysis failed: "+err.message+" — check that your uploaded files have the expected columns, or that the API is reachable.",true);
+    console.error(err);
+  }finally{
+    runInProgress=false;
+    btn.disabled=false;btn.textContent="▶ Run Analysis";
+  }
+}
+
+// ─── flag filter options change per system ───
+function buildFlagFilter(){
+  const ff=document.getElementById("ff");
+  if(sys==="pmweb"){
+    ff.innerHTML=`<option value="">All flags</option><option value="priv">Critical privilege</option><option value="sod">SoD conflict</option><option value="sens">Sensitive access</option><option value="ext">External domain</option><option value="generic">Generic/shared account</option><option value="svc">Service account</option><option value="testacc">Test/UAT/training</option><option value="blank">Blank group</option><option value="guestadmin">Guest licence + privileged group</option><option value="adminEquiv">Admin-equivalent group (score)</option><option value="contractorInv">External invoice edit access</option>`;
+  }else{
+    ff.innerHTML=`<option value="">All flags</option><option value="or_directAdmin">Direct Admin</option><option value="or_adminEquiv">Admin-Equivalent (Combination)</option><option value="or_procurement">Procurement Risk (Combination)</option><option value="or_payables">Payables Risk</option><option value="or_payroll">Payroll Risk</option><option value="or_generic">Generic/Shared Account</option><option value="or_service">Service Account</option><option value="or_dormant">Dormant Powerful Account</option><option value="or_roleExplosion">Role Explosion</option>`;
+  }
+}
+
+// ─── KPIs ────────────────────────────────────────────────────
+function renderKPIs(){
+  const k1=document.getElementById("kpis"), k2=document.getElementById("kpis2");
+  if(sys==="oracle"&&orAssessment){
+    const totalUsers=new Set(results.map(r=>r.user)).size;
+    const privilegedUsers=results.filter(r=>r.flags.privilegedRole||r.flags.directAdmin||r.flags.adminEquiv||(r.flags.priv&&r.flags.priv.length)).length;
+    const criticalRisk=results.filter(r=>r.risk==="Critical").length;
+    const highRisk=results.filter(r=>r.risk==="High").length;
+    const genericUsers=orAssessment.genericAccounts.length;
+    const adminEquivUsers=results.filter(r=>r.flags.adminEquiv).length;
+    const multiSoDUsers=results.filter(r=>r.flags.multiSoD).length;
+    const privilegedRoles=orRolePrivCounts.privilegedRoleCount||0;
+    const topAdmin=orDirectAdminTop;
+
+    // Row 1: Total Users, Privileged Users (Unique), Critical Risk (Unique Users), High Risk (Unique Users)
+    k1.style.gridTemplateColumns="repeat(4,1fr)";
+    k1.innerHTML=`
+      <div class="kpi kt"><div class="kl">Total Users</div><div class="kv">${totalUsers}</div></div>
+      <div class="kpi kp"><div class="kl">Privileged Users (Unique)</div><div class="kv">${privilegedUsers}</div></div>
+      <div class="kpi kc"><div class="kl">Critical Risk (Unique Users)</div><div class="kv">${criticalRisk}</div></div>
+      <div class="kpi kh"><div class="kl">High Risk (Unique Users)</div><div class="kv">${highRisk}</div></div>`;
+
+    k2.style.display="";
+    k2.style.gridTemplateColumns="repeat(5,1fr)";
+    k2.innerHTML=`
+      <div class="kpi kc"><div class="kl">Direct Admin (Most Privileges)</div><div class="kv" style="font-size:15px;line-height:1.3">${topAdmin?esc(topAdmin.user):"—"}</div><div class="ks">${topAdmin?topAdmin.count+" Direct Admin privilege(s)":"no direct admin found"}</div></div>
+      <div class="kpi kh"><div class="kl">Privileged Roles</div><div class="kv">${privilegedRoles}</div><div class="ks">of ${orRolePrivCounts.totalDistinctRoles||0} distinct roles</div></div>
+      <div class="kpi kc"><div class="kl">Admin-Equivalent Users</div><div class="kv">${adminEquivUsers}</div><div class="ks">combination match only (see governance note)</div></div>
+      <div class="kpi kc"><div class="kl">Multi-Privilege SoD Conflict</div><div class="kv">${multiSoDUsers}</div><div class="ks">end-to-end access, 3+ risk domains</div></div>
+      <div class="kpi kp"><div class="kl">Generic Users</div><div class="kv">${genericUsers}</div></div>`;
+  }else{
+    const t=results.length,crit=results.filter(r=>r.risk==="Critical").length,high=results.filter(r=>r.risk==="High").length,priv=results.filter(r=>r.flags.priv&&r.flags.priv.length>0).length,sod=results.filter(r=>r.flags.sod&&r.flags.sod.length>0).length;
+    k1.style.gridTemplateColumns="repeat(5,1fr)";
+    k1.innerHTML=`<div class="kpi kt"><div class="kl">Total Active Users</div><div class="kv">${t}</div></div><div class="kpi kp"><div class="kl">Privileged Users</div><div class="kv">${priv}</div></div><div class="kpi kh"><div class="kl">High Risk</div><div class="kv">${high}</div></div><div class="kpi kc"><div class="kl">Critical Risk</div><div class="kv">${crit}</div></div><div class="kpi kc"><div class="kl">SoD Violations</div><div class="kv">${sod}</div></div>`;
+    if(pmAssessment){
+      const s=pmAssessment.summary;
+      k2.style.display="";
+      k2.style.gridTemplateColumns="repeat(4,1fr)";
+      k2.innerHTML=`<div class="kpi kc"><div class="kl">Direct Admins</div><div class="kv">${s.adminUsers}</div></div>
+      <div class="kpi kc"><div class="kl">Admin-Equivalent Groups (score)</div><div class="kv">${s.adminEquivalentGroups}</div></div>
+      <div class="kpi kc"><div class="kl">Generic / Shared Accounts</div><div class="kv">${s.genericAccounts}</div></div>
+      <div class="kpi kc"><div class="kl">Shared Account w/ Full Control</div><div class="kv">${s.sharedFullControl||0}</div></div>
+      <div class="kpi kh"><div class="kl">Service / Bot Accounts</div><div class="kv">${s.serviceAccounts}</div></div>
+      <div class="kpi kh"><div class="kl">External Users</div><div class="kv">${s.externalUsers}</div></div>
+      <div class="kpi kc"><div class="kl">External in Admin Group</div><div class="kv">${s.externalAdminGroupUsers||0}</div></div>
+      <div class="kpi kc"><div class="kl">External + Privileged Access</div><div class="kv">${s.externalPrivileged}</div></div>
+      <div class="kpi kh"><div class="kl">Contractor Invoice-Edit Access</div><div class="kv">${s.contractorAccess}</div></div>
+      <div class="kpi kh"><div class="kl">Test / UAT / Training</div><div class="kv">${s.testAccounts}</div></div>
+      <div class="kpi kh"><div class="kl">Risky Internal Access Rights</div><div class="kv">${s.riskyInternalTotal||0}</div></div>`;
+    }else{
+      k2.style.display="none";k2.innerHTML="";
+    }
+  }
+}
+
+// ─── PMWEB DIAGNOSTIC — group-matching & permission-value visibility ──
+// Answers "why isn't Full Control showing up" directly: either the user's
+// Group doesn't match any Group Access Matrix column (most common cause —
+// that user gets zero effective-access rows, silently), or the permission
+// text in the matrix isn't recognized as Full Control wording.
+function renderPMDiagnostic(){
+  const slot=document.getElementById("pm-diag-slot");
+  if(!slot)return;
+  if(sys!=="pmweb"||!pmDiagnostic){slot.innerHTML="";return;}
+  const d=pmDiagnostic;
+  const hasFuzzy=d.fuzzyGroups&&d.fuzzyGroups.length>0;
+  const hasAmbiguous=d.ambiguousGroups&&d.ambiguousGroups.length>0;
+  const hasUnmatched=d.unmatchedGroups&&d.unmatchedGroups.length>0;
+  const noFullControlFound=d.fullControlCellCount===0;
+  const allClean=!hasFuzzy&&!hasAmbiguous&&!hasUnmatched&&!noFullControlFound;
+
+  const sheetPart=(d.sheets&&d.sheets.length)?(function(){
+    const sheetRows=d.sheets.map(s=>`<tr><td style="font-weight:600">${esc(s.name)}</td><td>${s.type==="Unclassified"?`<span style="color:var(--red)">Unclassified — tab name doesn't contain "system" or "custom"</span>`:esc(s.type)}</td><td>${s.formCount}</td></tr>`).join("");
+    return `<div style="margin-bottom:10px"><b>Group Access Matrix tabs detected:</b></div>
+    <table style="margin-bottom:10px"><thead><tr><th>Sheet/Tab Name</th><th>Classified As</th><th># Distinct Forms</th></tr></thead><tbody>${sheetRows}</tbody></table>`;
+  })():"";
+  const anyUnclassified=d.sheets&&d.sheets.some(s=>s.type==="Unclassified");
+
+  if(allClean&&!anyUnclassified){
+    slot.innerHTML=`<div class="note" style="margin-bottom:14px">✓ Group matching: all ${d.totalDistinctReportGroups} distinct group(s) from the User Access Report matched a column in the Group Access Matrix exactly. ${d.fullControlCellCount} cell(s) in the matrix were recognized as Full Control / Administrator-level access.${sheetPart?"<br><br>"+sheetPart:""}</div>`;
+    return;
+  }
+
+  const parts=[sheetPart];
+  parts.push(`<div style="margin-bottom:10px">Group matching summary: <b>${d.exactGroupCount} exact</b>, <b>${d.fuzzyGroups.length} fuzzy-matched</b>, <b>${d.ambiguousGroups.length} ambiguous</b>, <b>${d.unmatchedGroups.length} unmatched</b> — out of ${d.totalDistinctReportGroups} distinct group(s) in the User Access Report, against ${d.matrixGroupCount} group columns detected in the matrix (form-name column(s) detected: "<b>${esc(d.formColumn)}</b>").</div>`);
+
+  if(hasFuzzy){
+    const rows=d.fuzzyGroups.slice(0,20).map(g=>`<tr><td style="font-weight:600">${esc(g.group)}</td><td>${esc(g.matchedTo)}</td><td>${g.users}</td></tr>`).join("");
+    parts.push(`<div style="margin:10px 0"><b>${d.fuzzyGroups.length} group(s) matched via fuzzy fallback</b> (numbering/punctuation/hyphen differences only) — these ARE included in the analysis, but double-check the pairing below is correct:</div>
+    <table style="margin-bottom:10px"><thead><tr><th>Report Group</th><th>Matched Matrix Column</th><th># Users</th></tr></thead><tbody>${rows}</tbody></table>`);
+  }
+  if(hasAmbiguous){
+    const rows=d.ambiguousGroups.slice(0,20).map(g=>`<tr><td style="font-weight:600">${esc(g.group)}</td><td>${g.candidates.length} possible matches</td><td>${g.users}</td></tr>`).join("");
+    parts.push(`<div style="margin:10px 0"><b>${d.ambiguousGroups.length} group(s) are ambiguous</b> — 2+ matrix columns look similar enough to match but aren't identical, so no automatic guess was made. These users currently get ZERO effective access. Please confirm the exact intended column for each:</div>
+    <table style="margin-bottom:10px"><thead><tr><th>Report Group</th><th>Candidates</th><th># Users</th></tr></thead><tbody>${rows}</tbody></table>`);
+  }
+  if(hasUnmatched){
+    const rows=d.unmatchedGroups.slice(0,20).map(g=>`<tr><td style="font-weight:600">${esc(g.group)}</td><td>${g.users}</td></tr>`).join("");
+    parts.push(`<div style="margin:10px 0"><b>${d.unmatchedGroups.length} group(s) have no match at all</b> (not even a fuzzy one) — these users get ZERO effective access, which is almost certainly why some Full Control (or any privileged) users aren't appearing:</div>
+    <table style="margin-bottom:10px"><thead><tr><th>Unmatched Group (from User Access Report)</th><th># Users Affected</th></tr></thead><tbody>${rows}</tbody></table>
+    <div class="lbl" style="margin-bottom:4px">Group Columns Detected in the Matrix (sample)</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:10px">${d.matrixGroupsSample.map(esc).join(" · ")}${d.matrixGroupCount>d.matrixGroupsSample.length?` … (+${d.matrixGroupCount-d.matrixGroupsSample.length} more)`:""}</div>`);
+  }
+  if(noFullControlFound){
+    const topPerms=d.permFreq.slice(0,15).map(([k,v])=>`<tr><td style="font-weight:600">${esc(k)}</td><td>${v}</td></tr>`).join("");
+    parts.push(`<div style="margin:10px 0">No cell in the Group Access Matrix was recognized as <b>Full Control / Administrator</b> wording. Every distinct permission value actually found in the matrix (${d.matrixRowCount} form rows read) is listed below — if your file uses different wording, tell me the exact wording and I'll add it to the classifier.</div>
+    <table><thead><tr><th>Permission Value Found in Matrix</th><th># Cells</th></tr></thead><tbody>${topPerms||`<tr><td colspan="2" style="text-align:center;color:var(--text2)">No permission values found — check the Group Access Matrix uploaded correctly (rows = forms, columns = groups).</td></tr>`}</tbody></table>`);
+  }
+  slot.innerHTML=`<div class="gov-banner" style="background:var(--red-bg);border-color:var(--red);color:#7f1d1d">⚠ <b>Diagnostic — group matching and permission-value detection:</b><br><br>${parts.join("")}</div>`;
+}
+
+// ─── GOVERNANCE BANNER + EVIDENCE LIST + NARRATIVE FINDINGS ──
+function renderGovBanner(){
+  const slot=document.getElementById("gov-banner-slot");
+  if(sys==="pmweb"){
+    const g=govNotes;
+    const zeroInactive=g.inactiveCount===0;
+    const parts=[];
+    if(g.groupColumnMissing)parts.push(`⚠ <b>No Group/Template column could be identified</b> in the User Access Report — every user will show a blank Group. Rename the column to include "Group" or "Template", or check the column headers. (Detected columns — ID: "${g.detectedColumns.id||"?"}", Name: "${g.detectedColumns.name||"—"}", Group: none found, License: "${g.detectedColumns.license||"—"}".)`);
+    parts.push(`Domain(s) used to classify <b>internal/approved</b> access: <b>${g.orgDomain||"not detected"}</b>. Users on other domains are flagged External below — a user ID with no "@" (a bare username) is no longer assumed External, since PMWeb commonly uses plain usernames for internal staff.`);
+    if(zeroInactive)parts.push(`All ${g.allCount} user records are marked <b>Inactive = No</b>. A zero-inactive population is unusual — confirm whether the report excludes inactive accounts or deactivation isn't being performed.`);
+    if(g.blankGroupCount>0)parts.push(`${g.blankGroupCount} active accounts have a <b>blank Group</b>. PMWeb can still grant access via Conditional Security, Project Users, Form Builder, workflow participation and report permissions — a blank group does not prove zero effective access.`);
+    parts.push(`Direct administrators are now detected three ways: by <b>group name</b> (e.g. "admin", "superadmin"), by <b>weighted score</b> (sum of permission scores across critical modules ≥ ${document.getElementById("cfg-threshold").value}), and by <b>average access level</b> (a group whose average permission score across all its granted forms exceeds 7 — i.e. dominated by Create&Edit/Full Control — is treated as admin-level regardless of name).${g.avgAccessAdminCount?` ${g.avgAccessAdminCount} user(s) were flagged by the average-access rule.`:""}`);
+    slot.innerHTML=`<div class="gov-banner">⚠ <b>Governance note:</b> ${parts.join(" ")}</div>`;
+  }else if(sys==="oracle"){
+    const parts=[];
+    parts.push(`Privilege matching uses the curated <b>curated Oracle Fusion privilege library</b> (exact name match only) across BI, FIN, ATR, FSM, HCM, INT, PROC, RISK, SEC and BPM.`);
+    parts.push(`<b>Risk follows the priority matrix directly</b> — a user's risk is the highest Critical/High/Medium/Low tier actually matched. Nothing else raises it except the two combination tests and the Payables/Payroll SoD checks below.`);
+    parts.push(`<b>Procurement Risk</b> now requires ALL FOUR of: amend supplier master data, supplier bank account access, payment configuration access, and payment method access — held by the same account. A single privilege from any one of these groups is not, by itself, flagged.`);
+    parts.push(`<b>Admin-Equivalent</b> now requires EITHER (edit user profiles + user bank account access + maintain security privileges) OR (maintain/manage security profiles + manage user roles) — both held together, not a single tagged privilege.`);
+    parts.push(`<b>Payables Risk</b> = holding both Manage Payables Invoices and Manage Payables Payments. <b>Payroll Risk</b> = holding 2 or more Payroll-Risk-categorized privileges.`);
+    parts.push(`"Dormant Powerful Account" is approximated from generic/service/integration naming patterns on privileged accounts — this extract has no LDAP or last-login data, so true dormancy needs a last-activity report as follow-up evidence.`);
+    if(!raw["or2"]||!raw["or2"].length)parts.push(`No Role-to-Privilege Mapping file was supplied — no privilege-level matching could run.`);
+    slot.innerHTML=`<div class="gov-banner">⚠ <b>Governance note:</b> ${parts.join(" ")}</div>`;
+  }else{
+    slot.innerHTML="";
+  }
+}
+function renderAdminCredPanel(){
+  const slot=document.getElementById("admin-cred-slot");
+  if(sys!=="pmweb"||!govNotes.credEntries||!govNotes.credEntries.length){slot.innerHTML="";return;}
+  const rows=govNotes.credEntries.map(e=>`<tr><td style="font-weight:600">${esc(e.cred)}</td><td>${esc(e.persons.join(", "))}</td><td>${e.persons.length}</td></tr>`).join("");
+  slot.innerHTML=`<div class="gov-list"><div class="lbl" style="margin-bottom:8px">Shared Administrator Credentials — Persons With Recorded Access</div>
+  <table><thead><tr><th>Admin Credential</th><th>Persons Recorded As Having Access</th><th># People</th></tr></thead><tbody>${rows}</tbody></table>
+  <div style="font-size:11px;color:var(--text2);margin-top:8px">Multiple named individuals sharing one privileged credential is a critical accountability and non-repudiation risk. Disable interactive use of shared credentials; vault as break-glass with checkout-only access and post-use review.</div></div>`;
+}
+// Directly answers "how is it possible so many users show Critical?" — lists
+// exactly which curated privileges are driving the Critical (and High)
+// classification, ranked by how many distinct users hold each one. If one
+// or two privileges dominate this list, that's either a genuine
+// over-provisioning finding (a Critical privilege bundled too broadly into
+// common roles) or a signal to check the uploaded file's column mapping —
+// either way it's now visible instead of hidden behind a single risk badge.
+function renderCriticalDrivers(){
+  const slot=document.getElementById("critical-drivers-slot");
+  if(sys!=="oracle"||!orAssessment||!orAssessment.criticalDrivers){slot.innerHTML="";return;}
+  const totalUsers=new Set(results.map(r=>r.user)).size||1;
+  const critRows=(orAssessment.criticalDrivers||[]).slice(0,10).map(d=>`<tr><td style="font-weight:600">${esc(d.name)}</td><td>${d.count}</td><td>${((d.count/totalUsers)*100).toFixed(1)}%</td></tr>`).join("");
+  const highRows=(orAssessment.highDrivers||[]).slice(0,10).map(d=>`<tr><td style="font-weight:600">${esc(d.name)}</td><td>${d.count}</td><td>${((d.count/totalUsers)*100).toFixed(1)}%</td></tr>`).join("");
+  if(!critRows&&!highRows){slot.innerHTML="";return;}
+  slot.innerHTML=`<div class="gov-list">
+    <div class="lbl" style="margin-bottom:8px">Critical / High Risk Drivers — Why Users Are Classified This Way</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.6">Each row is one curated privilege and how many distinct users actually hold it (exact name match). A user's overall risk is Critical only if they hold at least one Critical-tier privilege below (or trip a combination rule) — this table shows precisely which privileges are responsible, so a widespread Critical count can be traced back to a specific over-provisioned privilege rather than treated as an unexplained tool result.</div>
+    ${critRows?`<div class="lbl" style="color:var(--red);margin-top:4px">Top Critical-Tier Privileges by User Count</div><table><thead><tr><th>Privilege</th><th># Users Holding It</th><th>% of Total Users</th></tr></thead><tbody>${critRows}</tbody></table>`:""}
+    ${highRows?`<div class="lbl" style="color:var(--amber);margin-top:14px">Top High-Tier Privileges by User Count</div><table><thead><tr><th>Privilege</th><th># Users Holding It</th><th>% of Total Users</th></tr></thead><tbody>${highRows}</tbody></table>`:""}
+  </div>`;
+}
+function renderGovEvidence(){
+  const slot=document.getElementById("gov-evidence");
+  if(sys==="pmweb"){
+    const items=[
+      "User-to-group membership report","Direct user permissions report","Project Users report","Conditional Security configuration",
+      "Custom Form permissions","Workflow role and delegation report","Report and Document Manager permissions","Group special-options configuration",
+      "User last-login and last-activity report","Admin and security-change audit trail","User creation, modification and disablement logs",
+      "Project-wise external-user access","MFA and authentication configuration","Approved access requests for all privileged users",
+      "Service-account owner, purpose and credential-vaulting evidence"
+    ];
+    slot.innerHTML=`<div class="lbl" style="margin-bottom:8px">Recommended Additional Audit Evidence</div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.7">PMWeb security rights can be extended beyond the group matrix through conditional settings, project access, Form Builder, workflows and user-specific permissions. To complete the effective-access review, request:</div>
+    <ol style="margin:10px 0 0 18px;font-size:12px;color:var(--text2);line-height:1.9">${items.map(i=>`<li>${i}</li>`).join("")}</ol>`;
+  }else if(sys==="oracle"){
+    const items=[
+      "Security Console user list with last-login / last-authentication timestamps (to test true dormancy)",
+      "Data role and security profile assignments (data-level access, not just job/duty roles)",
+      "Segregation of Duties (AACG / Advanced Access Controls) violation and waiver report",
+      "Role hierarchy export (duty roles and privileges inherited by each job role, not just directly mapped)",
+      "Password/SSO/MFA configuration for all privileged and service accounts",
+      "Change history / audit trail for role and privilege assignment changes",
+      "Approved access-request and provisioning-workflow records for privileged roles",
+      "Access Certification campaign results and sign-off history",
+      "Service account / integration credential ownership and vaulting evidence",
+      "Custom role definitions (copies of seeded roles) and their delta from the original"
+    ];
+    slot.innerHTML=`<div class="lbl" style="margin-bottom:8px">Recommended Additional Audit Evidence</div>
+    <div style="font-size:12px;color:var(--text2);line-height:1.7">This engine analyses job/duty-role-to-privilege assignments only. Oracle Fusion also secures data through data roles, security profiles and AACG-managed SoD policies. To complete the review, request:</div>
+    <ol style="margin:10px 0 0 18px;font-size:12px;color:var(--text2);line-height:1.9">${items.map(i=>`<li>${i}</li>`).join("")}</ol>`;
+  }else{
+    slot.innerHTML="";
+  }
+}
+function renderAuditFindings(){
+  const hdr=document.getElementById("findings-hdr"),slot=document.getElementById("audit-findings");
+  const assessment=sys==="pmweb"?pmAssessment:orAssessment;
+  if(!assessment||!assessment.narrativeFindings||!assessment.narrativeFindings.length){hdr.style.display="none";slot.innerHTML="";return;}
+  hdr.style.display="";
+  slot.innerHTML=assessment.narrativeFindings.map(f=>`
+    <div class="finding-card ${f.risk}">
+      <div class="ft"><span class="badge ${f.risk}">${f.risk}</span> ${esc(f.title)} <span style="font-weight:400;color:var(--text2);font-size:11px">(${f.affectedUsers.length} affected)</span></div>
+      <div class="fmeta"><b>Impact:</b> ${esc(f.impact)}<br><b>Recommendation:</b> ${esc(f.recommendation)}</div>
+      <div class="fusers"><b>Affected:</b> ${f.affectedUsers.slice(0,25).map(u=>{
+        const priv=(u.privileges&&u.privileges.length)?` (${u.privileges.slice(0,3).map(esc).join(", ")}${u.privileges.length>3?` +${u.privileges.length-3} more`:""})`:"";
+        return esc(u.userid)+priv;
+      }).join(", ")}${f.affectedUsers.length>25?` +${f.affectedUsers.length-25} more`:""}</div>
+    </div>`).join("");
+}
+
+// ─── CHARTS ──────────────────────────────────────────────────
+function renderCharts(){
+  Object.values(charts).forEach(c=>{try{c.destroy();}catch(e){}});charts={};
+  const cts={Critical:0,High:0,Medium:0,Low:0,Safe:0},roleCt={},flagCt={};let tp=0,cp=0;
+  const pillarCt={};
+  results.forEach(r=>{
+    cts[r.risk]=(cts[r.risk]||0)+1;
+    tp+=r.privileges.length;cp+=r.flags.critCount||0;
+    r.roles.split(",").forEach(rl=>{const k=rl.trim();if(k){roleCt[k]=(roleCt[k]||0)+1;}});
+    (r.flags.priv||[]).slice(0,3).forEach(f=>{const k=f.slice(0,40);flagCt[k]=(flagCt[k]||0)+1;});
+    if(sys==="oracle"){
+      (r.flags.priv||[]).forEach(f=>{
+        const m=f.match(/^\[([A-Z]+)\]/);
+        const bp=m?m[1]:"OTHER";
+        pillarCt[bp]=(pillarCt[bp]||0)+1;
+      });
+    }
+  });
+  const C=["#b91c1c","#b45309","#6d28d9","#065f46","#0e7490","#3730a3","#166534","#9f1239","#334155","#854d0e"];
+
+  if(sys==="oracle"){
+    // Privilege Mix: breakdown of matched Critical/High privilege instances by pillar
+    const entries=Object.entries(pillarCt).sort((a,b)=>b[1]-a[1]);
+    const top=entries.slice(0,7);
+    const otherSum=entries.slice(7).reduce((s,e)=>s+e[1],0);
+    const labels=top.map(e=>e[0]).concat(otherSum>0?["OTHER"]:[]);
+    const data=top.map(e=>e[1]).concat(otherSum>0?[otherSum]:[]);
+    charts.priv=new Chart(document.getElementById("cPriv"),{type:"doughnut",data:{labels,datasets:[{data,backgroundColor:C.slice(0,labels.length),borderWidth:2,borderColor:"#fff"}]},options:{plugins:{legend:{position:"bottom",labels:{font:{size:10},boxWidth:10}}},cutout:"60%"}});
+  }else{
+    charts.priv=new Chart(document.getElementById("cPriv"),{type:"doughnut",data:{labels:["Critical/Admin","Other"],datasets:[{data:[cp,Math.max(0,tp-cp)],backgroundColor:[C[0],C[3]],borderWidth:2,borderColor:"#fff"}]},options:{plugins:{legend:{position:"bottom",labels:{font:{size:11},boxWidth:12}}},cutout:"65%"}});
+  }
+
+  charts.risk=new Chart(document.getElementById("cRisk"),{type:"doughnut",data:{labels:["Critical","High","Medium","Low","Safe"],datasets:[{data:[cts.Critical||0,cts.High||0,cts.Medium||0,cts.Low||0,cts.Safe||0],backgroundColor:[C[0],C[1],"#eab308",C[2],C[3]],borderWidth:2,borderColor:"#fff"}]},options:{plugins:{legend:{position:"bottom",labels:{font:{size:11},boxWidth:12}}},cutout:"65%"}});
+
+  if(sys!=="oracle"){
+    const tr=Object.entries(roleCt).sort((a,b)=>b[1]-a[1]).slice(0,8);
+    charts.roles=new Chart(document.getElementById("cRoles"),{type:"bar",data:{labels:tr.map(r=>r[0].length>22?r[0].slice(0,20)+"…":r[0]),datasets:[{label:"Users",data:tr.map(r=>r[1]),backgroundColor:C[4],borderRadius:4}]},options:{indexAxis:"y",plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10}}},y:{ticks:{font:{size:10}}}}}});
+    const tf=Object.entries(flagCt).sort((a,b)=>b[1]-a[1]).slice(0,8);
+    charts.flags=new Chart(document.getElementById("cFlags"),{type:"bar",data:{labels:tf.map(r=>r[0].length>25?r[0].slice(0,23)+"…":r[0]),datasets:[{label:"Users",data:tf.map(r=>r[1]),backgroundColor:C[0],borderRadius:4}]},options:{indexAxis:"y",plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10}}},y:{ticks:{font:{size:10}}}}}});
+  }
+}
+
+// ─── TABLE ───────────────────────────────────────────────────
+function srt(c){if(sortCol===c)sortAsc=!sortAsc;else{sortCol=c;sortAsc=true;}renderT();}
+function passesFlagFilter(r,ff){
+  if(!ff)return true;
+  const f=r.flags;
+  const map={
+    priv:f.priv&&f.priv.length, sod:f.sod&&f.sod.length, sens:f.sens&&f.sens.length,
+    ext:f.external, generic:f.generic, svc:f.service, testacc:f.testAcc, blank:f.blankGroup,
+    guestadmin:f.guestAdmin, adminEquiv:f.adminEquivGroup, contractorInv:f.contractorInvoice,
+    or_directAdmin:f.directAdmin, or_privilegedRole:f.privilegedRole, or_adminEquiv:f.adminEquiv,
+    or_generic:f.generic, or_service:f.service, or_dormant:f.dormant, or_superUser:f.superUser,
+    or_procurement:f.procurementRisk, or_payables:f.payablesRisk, or_payroll:f.payrollRisk,
+    or_accessCert:f.accessCertRisk, or_roleExplosion:f.roleExplosion, or_sensitive:f.sensitivePrivilege
+  };
+  return !!map[ff];
+}
+function renderT(){
+  const q=(document.getElementById("q").value||"").toLowerCase();
+  const rf=document.getElementById("rf").value,ff=document.getElementById("ff").value;
+  const rO={Critical:0,High:1,Medium:2,Low:3,Safe:4};
+  let rows=[...results].filter(r=>{
+    if(rf&&r.risk!==rf)return false;
+    if(!passesFlagFilter(r,ff))return false;
+    if(q&&![r.user,r.roles,...r.privileges].join(" ").toLowerCase().includes(q))return false;
+    return true;
+  }).sort((a,b)=>{
+    const va=sortCol==="risk"?rO[a.risk]:(a[sortCol]||""),vb=sortCol==="risk"?rO[b.risk]:(b[sortCol]||"");
+    return sortAsc?(va<vb?-1:va>vb?1:0):(va>vb?-1:va<vb?1:0);
+  });
+  const tot=rows.length,pages=Math.max(1,Math.ceil(tot/PAGE));
+  page=Math.min(page,pages);
+  const pg=rows.slice((page-1)*PAGE,page*PAGE);
+  const showForms=sys==="pmweb";
+  document.getElementById("tbody").innerHTML=pg.length?pg.map(r=>{
+    const privList=(r.allPrivileges&&r.allPrivileges.length)?r.allPrivileges:r.privileges;
+    const formsList=r.forms||[];
+    const formsCell=showForms?`<td><div class="priv-list">${formsList.slice(0,15).map(f=>`• ${esc(f)}`).join("<br>")}${formsList.length>15?`<br><span style="color:var(--text2)">+${formsList.length-15} more</span>`:""}${!formsList.length?"—":""}</div></td>`:"";
+    return `<tr>
+    <td style="font-weight:600">${esc(r.user)}${r.name?`<br><span style="font-size:11px;font-weight:400;color:var(--text2)">${esc(r.name)}</span>`:""}</td>
+    <td style="font-size:12px;color:var(--text2)">${esc(r.roles||"—")}</td>
+    ${formsCell}
+    <td><div class="priv-list">${privList.slice(0,10).map(p=>`• ${esc(p)}`).join("<br>")}${privList.length>10?`<br><span style="color:var(--text2)">+${privList.length-10} more</span>`:""}</div></td>
+    <td><span class="badge ${r.risk}">${r.risk}</span></td>
+  </tr>`;
+  }).join(""):`<tr><td colspan="${showForms?5:4}" style="text-align:center;padding:2rem;color:var(--text2)">No matching users</td></tr>`;
+  const pEl=document.getElementById("pag");
+  if(pages<=1){pEl.innerHTML="";return;}
+  let h=`<span style="color:var(--text2);margin-right:6px">${tot} users</span>`;
+  if(page>1)h+=`<button class="pbtn" onclick="goP(${page-1})">‹</button>`;
+  for(let p2=Math.max(1,page-2);p2<=Math.min(pages,page+2);p2++)h+=`<button class="pbtn${p2===page?" a":""}" onclick="goP(${p2})">${p2}</button>`;
+  if(page<pages)h+=`<button class="pbtn" onclick="goP(${page+1})">›</button>`;
+  pEl.innerHTML=h;
+}
+function goP(p2){page=p2;renderT();}
+function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+
+// ─── EXCEL ANNEXURES (multi-tab, robust, category-based) ────
+function safeSheetName(name,used){
+  let n=String(name||"Sheet").replace(/[:\\\/\?\*\[\]]/g,"-").trim();
+  if(n.length>31)n=n.slice(0,31);
+  if(!n)n="Sheet";
+  let final=n,i=2;
+  while(used.has(final.toLowerCase())){
+    const suf=" ("+i+")";
+    final=n.slice(0,31-suf.length)+suf;
+    i++;
+  }
+  used.add(final.toLowerCase());
+  return final;
+}
+const EXCEL_CELL_LIMIT=32000;
+function joinCapped(arr,sep,maxItems){
+  sep=sep||"; ";maxItems=maxItems||500;
+  arr=arr||[];
+  if(arr.length<=maxItems)return arr.join(sep);
+  return arr.slice(0,maxItems).join(sep)+sep+`…(+${arr.length-maxItems} more — ${arr.length} total)`;
+}
+function truncateForCell(val){
+  if(typeof val!=="string"||val.length<=EXCEL_CELL_LIMIT)return val;
+  return val.slice(0,EXCEL_CELL_LIMIT)+` …[truncated — ${val.length.toLocaleString()} chars total]`;
+}
+function addSheet(wb,used,name,rows){
+  if(!rows||!rows.length)return;
+  try{
+    const safeRows=rows.map(r=>{
+      const o={};
+      Object.keys(r).forEach(k=>{o[k]=truncateForCell(r[k]);});
+      return o;
+    });
+    const ws=XLSX.utils.json_to_sheet(safeRows);
+    XLSX.utils.book_append_sheet(wb,ws,safeSheetName(name,used));
+  }catch(err){
+    console.error("Failed to add sheet",name,err);
+    toast(`Could not add the "${name}" sheet (${err.message}) — continuing with the remaining annexure tabs.`,true);
+  }
+}
+function finList(list,extraCols){
+  extraCols=extraCols||(()=>({}));
+  return (list||[]).map(u=>Object.assign({
+    User:u.userid||u.user||"",
+    Role:u.role||(u.roles?u.roles.join(", "):"")||"",
+    Privileges:(u.privileges&&u.privileges.length)?u.privileges.join("; "):"",
+    Group:u.group||"",
+    Severity:u.severity||""
+  },extraCols(u)));
+}
+function buildUserFormIndex(pmResults){
+  const idx={};
+  (pmResults||[]).forEach(function(r){ idx[r.user]=r.formAccess||[]; });
+  return idx;
+}
+// Explodes a finList-style finding array into ONE ROW PER (user, form)
+// instead of one row per user with every form crammed into a single
+// joined cell. Precedence for which forms to use:
+//   1. If the finding object carries its own `privileges` list (the
+//      SPECIFIC forms that triggered this finding, e.g. External User —
+//      Privileged Form Access) and preferUserForms isn't set, use those —
+//      they're more precise than the user's full access list.
+//   2. Otherwise (or if preferUserForms is set), fall back to the user's
+//      complete form-level access from the main results array, via
+//      userFormIndex — this is what adds real form data to sheets whose
+//      finding objects never carried per-form detail (generic accounts,
+//      external users, test accounts, etc).
+//   3. If neither exists, still emit one row (with a blank Form) so the
+//      user isn't silently dropped from the sheet.
+function explodeByForm(list,userFormIndex,opts){
+  opts=opts||{};
+  const extraCols=opts.extraCols||function(){return{};};
+  const preferUserForms=!!opts.preferUserForms;
+  const CAP=20000; // total rows for this sheet
+  const PER_USER_FORM_CAP=60; // only applies to the userFormIndex fallback path — precise finding-specific privilege lists are never truncated here since they're already small
+  const rows=[];
+  let capped=false;
+  let anyUserTruncated=false;
+  (list||[]).forEach(function(u){
+    if(capped)return;
+    const userid=u.userid||u.user||"";
+    const group=u.group||u.role||(u.roles?u.roles.join(", "):"")||"";
+    const severity=u.severity||"";
+    let formEntries=[];
+    let usedFallback=false;
+    const userForms=userFormIndex[userid]||[];
+    if(!preferUserForms&&u.privileges&&u.privileges.length){
+      formEntries=u.privileges.map(function(p){return{form:String(p),perm:"",formType:""};});
+    }else if(userForms.length){
+      formEntries=userForms.map(function(f){return{form:f.form,perm:f.perm,formType:f.formType||""};});
+      usedFallback=true;
+    }else if(u.privileges&&u.privileges.length){
+      formEntries=u.privileges.map(function(p){return{form:String(p),perm:"",formType:""};});
+    }
+    if(!formEntries.length)formEntries=[{form:"",perm:"",formType:""}];
+    if(usedFallback&&formEntries.length>PER_USER_FORM_CAP){
+      formEntries=formEntries.slice(0,PER_USER_FORM_CAP);
+      anyUserTruncated=true;
+    }
+    for(let i=0;i<formEntries.length;i++){
+      if(rows.length>=CAP){capped=true;break;}
+      const f=formEntries[i];
+      const row={User:userid,Group:group,Form:f.form,Permission:f.perm,"Form Type":f.formType,Severity:severity};
+      Object.assign(row,extraCols(u));
+      rows.push(row);
+    }
+  });
+  if(capped)toast(`One of the annexure sheets was capped at ${CAP.toLocaleString()} rows to keep the file a manageable size — Annexure A has the complete per-user, per-form detail.`,false);
+  else if(anyUserTruncated)toast(`Some users hold access to more than ${PER_USER_FORM_CAP} forms via a broad group — a category sheet shows their first ${PER_USER_FORM_CAP}; Annexure A has the complete list.`,false);
+  return rows;
+}
+
+function exportAnnexures(){
+  if(typeof XLSX==="undefined"){toast("The Excel library (SheetJS) hasn't loaded — check your internet connection or ask IT to allow cdnjs.cloudflare.com, then try again.",true);return;}
+  if(!results||!results.length){toast("Run an analysis first, then export the Excel annexures.",true);return;}
+  try{
+    const wb=XLSX.utils.book_new();
+    const used=new Set();
+
+    const execRows=[];
+    if(sys==="pmweb"&&pmAssessment){
+      const s=pmAssessment.summary;
+      execRows.push(
+        {Metric:"System",Value:"PMWeb"},
+        {Metric:"Approved/internal domain(s)",Value:govNotes.orgDomain||""},
+        {Metric:"Admin-equivalent score threshold",Value:document.getElementById("cfg-threshold").value},
+        {Metric:"Total user records",Value:govNotes.allCount},
+        {Metric:"Active users analysed",Value:govNotes.activeCount},
+        {Metric:"Inactive users in source report",Value:govNotes.inactiveCount},
+        {Metric:"Blank-group active users",Value:govNotes.blankGroupCount},
+        {Metric:"Direct administrators",Value:s.adminUsers},
+        {Metric:"Admin-equivalent groups (weighted score)",Value:s.adminEquivalentGroups},
+        {Metric:"Generic/shared accounts",Value:s.genericAccounts},
+        {Metric:"Service/bot accounts",Value:s.serviceAccounts},
+        {Metric:"External-domain users",Value:s.externalUsers},
+        {Metric:"External users with privileged form access (Full Control/Edit+Delete)",Value:s.externalPrivileged},
+        {Metric:"Contractor invoice-edit access",Value:s.contractorAccess},
+        {Metric:"SoD conflicts (financial, 3+ modules)",Value:s.sodConflicts},
+        {Metric:"Test/UAT/training accounts",Value:s.testAccounts},
+        {Metric:"Users with recorded shared admin-credential access",Value:govNotes.sharedCredCount}
+      );
+    }else if(sys==="oracle"&&orAssessment){
+      const s=orAssessment.executiveSummary;
+      execRows.push(
+        {Metric:"System",Value:"Oracle Fusion"},
+        {Metric:"Privilege library size",Value:"curated (server-side)"},
+        {Metric:"Role explosion threshold",Value:document.getElementById("cfg-or-explosion").value},
+        {Metric:"Total Users",Value:s.totalUsers},
+        {Metric:"Total Roles",Value:s.totalRoles},
+        {Metric:"Privileged Roles (matched library)",Value:orRolePrivCounts.privilegedRoleCount||0},
+        {Metric:"Total Privileges",Value:s.totalPrivileges},
+        {Metric:"Direct Administrators",Value:orAssessment.adminUsers.length},
+        {Metric:"Privileged Users",Value:s.privilegedUsers},
+        {Metric:"Admin Equivalent Users (masters/workflow)",Value:results.filter(r=>r.flags.adminEquiv).length},
+        {Metric:"SoD Violations (super-user + procurement + payables + payroll)",Value:s.sodViolations},
+        {Metric:"Payroll Risks",Value:s.payrollRisks},
+        {Metric:"AP (Payables) Risks",Value:s.apRisks},
+        {Metric:"Procurement Risks",Value:s.procurementRisks},
+        {Metric:"Service Accounts",Value:s.serviceAccounts},
+        {Metric:"Generic/Shared Accounts",Value:s.genericAccounts},
+        {Metric:"Users With Excessive Roles",Value:s.excessiveRoleUsers},
+        {Metric:"Sensitive Privilege Holders",Value:s.sensitivePrivilegeHolders},
+        {Metric:"Access Certification Risk Users",Value:(orAssessment.accessCertificationRisks||[]).length},
+        {Metric:"Dormant Powerful Accounts",Value:(orAssessment.dormantPowerfulAccounts||[]).length}
+      );
+    }
+    addSheet(wb,used,"Executive Summary",execRows);
+
+    let allUsersRows;
+    if(sys==="pmweb"){
+      allUsersRows=[];
+      const CAP_A=60000;
+      let cappedA=false;
+      results.forEach(function(r){
+        if(cappedA)return;
+        const forms=(r.formAccess&&r.formAccess.length)?r.formAccess:[{form:"",perm:"",formType:""}];
+        forms.forEach(function(f){
+          if(allUsersRows.length>=CAP_A){cappedA=true;return;}
+          allUsersRows.push({
+            User:r.user,Group:r.roles,
+            Form:f.form,Permission:f.perm,"Form Type":f.formType||"",
+            Severity:r.risk
+          });
+        });
+      });
+      if(cappedA)toast(`Annexure A capped at ${CAP_A.toLocaleString()} rows to keep the file manageable — category sheets still reflect the full dataset.`,false);
+    }else{
+      allUsersRows=results.map(function(r){
+        return{User:r.user,Role:r.roles,"Privilege Names":joinCapped((r.allPrivileges&&r.allPrivileges.length)?r.allPrivileges:r.privileges,"; ",300),Severity:r.risk};
+      });
+    }
+    addSheet(wb,used,"Annexure A - All Users",allUsersRows);
+
+    if(sys==="pmweb"&&pmAssessment){
+      const userFormIndex=buildUserFormIndex(results);
+
+      addSheet(wb,used,"B - Direct Admins",explodeByForm(pmAssessment.adminUsers,userFormIndex));
+      if(pmAssessment.adminByAverageAccess&&pmAssessment.adminByAverageAccess.length){
+        addSheet(wb,used,"B2 - Direct Admins (Avg Access)",explodeByForm(pmAssessment.adminByAverageAccess,userFormIndex,{extraCols:u=>({"Average Score":u.avgScore})}));
+      }
+      addSheet(wb,used,"C - Admin-Equiv Groups",(pmAssessment.adminEquivalentGroups||[]).map(g=>({Group:g.group,Score:g.score,Severity:g.severity})));
+      addSheet(wb,used,"D - Generic-Shared Accounts",explodeByForm(pmAssessment.genericAccounts,userFormIndex));
+      addSheet(wb,used,"E - Service-Bot Accounts",explodeByForm(pmAssessment.serviceAccounts,userFormIndex));
+      addSheet(wb,used,"F - External Users",explodeByForm(pmAssessment.externalUsers,userFormIndex,{extraCols:u=>({Domain:u.domain||"","Member of Admin Group":u.isAdminGroupMember?"Yes":"No"})}));
+      addSheet(wb,used,"G - External Privileged Access",explodeByForm(pmAssessment.externalPrivileged,userFormIndex,{extraCols:u=>({Classification:u.classification||""})}));
+      addSheet(wb,used,"H - Contractor Invoice Access",explodeByForm(pmAssessment.contractorAccess,userFormIndex));
+      const sodRows=[];
+      (pmAssessment.sodConflicts||[]).forEach(function(u){
+        const mods=(u.modules&&u.modules.length)?u.modules:[""];
+        mods.forEach(function(m){ sodRows.push({User:u.userid,Module:m,Severity:u.severity}); });
+      });
+      addSheet(wb,used,"I - SoD Conflicts (Financial)",sodRows);
+      addSheet(wb,used,"J - Test-UAT Accounts",explodeByForm(pmAssessment.testAccounts,userFormIndex));
+      if(govNotes.credEntries&&govNotes.credEntries.length){
+        addSheet(wb,used,"K - Shared Admin Credentials",govNotes.credEntries.map(e=>({Credential:e.cred,"Persons With Access":e.persons.join("; "),"# People":e.persons.length,"Persons Also Holding Full Control":(e.personsWithFullControl||[]).join("; ")})));
+      }
+      if(pmAssessment.narrativeFindings&&pmAssessment.narrativeFindings.length){
+        const CAP_L=40000;
+        const findingRows=[];
+        let cappedL=false;
+        pmAssessment.narrativeFindings.forEach(function(f){
+          f.affectedUsers.forEach(function(u){
+            if(cappedL)return;
+            const userid=u.userid;
+            let formEntries=[];
+            if(u.privileges&&u.privileges.length){
+              formEntries=u.privileges.map(function(p){return{form:String(p),perm:""};});
+            }else if(userFormIndex[userid]&&userFormIndex[userid].length){
+              formEntries=userFormIndex[userid].map(function(ff){return{form:ff.form,perm:ff.perm};});
+            }
+            if(!formEntries.length)formEntries=[{form:"",perm:""}];
+            formEntries.forEach(function(fe){
+              if(findingRows.length>=CAP_L){cappedL=true;return;}
+              findingRows.push({Finding:f.title,Risk:f.risk,User:userid,Form:fe.form,Permission:fe.perm,Impact:f.impact,Recommendation:f.recommendation});
+            });
+          });
+        });
+        if(cappedL)toast(`Sheet L capped at ${CAP_L.toLocaleString()} rows to keep the file manageable.`,false);
+        addSheet(wb,used,"L - Audit Findings",findingRows);
+      }
+      addSheet(wb,used,"O - Shared Account w Full Control",explodeByForm(pmAssessment.sharedFullControl,userFormIndex,{extraCols:u=>({Classification:u.classification||""})}));
+      const ri=pmAssessment.riskyInternal||{knownGroups:[],procurementCommitment:[],projectFinanceInvoice:[]};
+      addSheet(wb,used,"P - Risky Access - Known Groups",explodeByForm(ri.knownGroups,userFormIndex,{preferUserForms:true,extraCols:u=>({Note:(u.privileges&&u.privileges[0])||""})}));
+      addSheet(wb,used,"Q - Risky Access - Procurement CO",explodeByForm(ri.procurementCommitment,userFormIndex));
+      addSheet(wb,used,"R - Risky Access - PF Invoice Edit",explodeByForm(ri.projectFinanceInvoice,userFormIndex));
+
+      const pmPrivRows=buildPMPrivilegedAccessClassification(results);
+      const CAP_M=40000;
+      const PER_USER_FORM_CAP_M=60;
+      const formPrivRows=[];
+      let cappedM=false;
+      pmPrivRows.filter(function(r){return r.highestRank>=2;}).forEach(function(r){
+        if(cappedM)return;
+        const drivingSet=new Set(r.drivingForms.map(function(f){return f.form+"|"+f.perm;}));
+        const formsForUser=(r.allForms||[]).slice(0,PER_USER_FORM_CAP_M);
+        formsForUser.forEach(function(f){
+          if(formPrivRows.length>=CAP_M){cappedM=true;return;}
+          formPrivRows.push({
+            User:r.user,Group:r.group,
+            Form:f.form,Permission:f.perm,"Form Type":f.formType||"",
+            "Form Tier":f.tier,
+            "Driving Classification":drivingSet.has(f.form+"|"+f.perm)?"Yes":"No",
+            Classification:r.highestTier,
+            "Combined Privileged Access":r.combined?"Yes":"No"
+          });
+        });
+      });
+      if(cappedM)toast(`Sheet M capped at ${CAP_M.toLocaleString()} rows to keep the file manageable — Annexure A has the complete per-user, per-form detail.`,false);
+      addSheet(wb,used,"M - Form Privileged Access",formPrivRows);
+
+      const combinedPrivRows=[];
+      pmPrivRows.filter(function(r){return r.combined;}).forEach(function(r){
+        r.criticalForms.forEach(function(f){
+          combinedPrivRows.push({
+            User:r.user,Group:r.group,
+            Form:f.form,"Form Type":f.formType||"",Tier:f.tier,Permission:f.perm,
+            "Highest Classification":r.highestTier
+          });
+        });
+      });
+      addSheet(wb,used,"N - Combined Privileged Access",combinedPrivRows);
+    }else if(sys==="oracle"&&orAssessment){
+      addSheet(wb,used,"B - Direct Admins",finList(orAssessment.adminUsers));
+      addSheet(wb,used,"C - Privileged Role Assignment",finList(orAssessment.privilegedUsers));
+      addSheet(wb,used,"D - Admin-Equivalent Users",finList(orAssessment.adminEquivalentUsers));
+      addSheet(wb,used,"E - Generic-Shared Accounts",finList(orAssessment.genericAccounts,u=>({Diagnostic:u.diagnostic||""})));
+      addSheet(wb,used,"F - Service-Integration Accts",finList(orAssessment.serviceAccounts,u=>({Diagnostic:u.diagnostic||""})));
+      addSheet(wb,used,"G - Dormant Powerful Accounts",finList(orAssessment.dormantPowerfulAccounts));
+      addSheet(wb,used,"H - Multi-Privilege SoD Conflict",finList(orAssessment.multiSoD,u=>({"Risk Domains":(u.domains||[]).join("; ")})));
+      addSheet(wb,used,"I - Procurement Risk",finList(orAssessment.procurementRisks,u=>({"Conflicting Duties":(u.duties||[]).join("; ")})));
+      addSheet(wb,used,"J - Payables Risk",finList(orAssessment.paymentRisks));
+      addSheet(wb,used,"K - Payroll Risk",finList(orAssessment.payrollRisks));
+      addSheet(wb,used,"L - Access Certification Risk",finList(orAssessment.accessCertificationRisks));
+      addSheet(wb,used,"M - Role Explosion",(orAssessment.excessiveRoleUsers||[]).map(u=>({User:u.userid,"Role Count":u.roleCount,Severity:u.severity})));
+      addSheet(wb,used,"N - Sensitive Privilege Holders",finList(orAssessment.sensitivePrivileges));
+      if(orAssessment.narrativeFindings&&orAssessment.narrativeFindings.length){
+        addSheet(wb,used,"O - Audit Findings",orAssessment.narrativeFindings.map(f=>({Finding:f.title,Risk:f.risk,"# Affected Users":f.affectedUsers.length,"Affected Users":joinCapped(f.affectedUsers.map(u=>u.privileges&&u.privileges.length?`${u.userid} [${u.privileges.join("; ")}]`:u.userid)),Impact:f.impact,Recommendation:f.recommendation})));
+      }
+      // Role-Privilege Detail: one row per (User, Role, Privilege) — shows
+      // exactly which role granted which specific curated privilege, using
+      // the real per-role breakdown computed during analysis (not a
+      // flattened "all roles" string repeated for every privilege).
+      const CAP=100000;
+      const eaRows=[];
+      results.forEach(r=>{
+        (r.roleBreakdown||[]).forEach(rb=>{
+          if(rb.privileges&&rb.privileges.length){
+            rb.privileges.forEach(e=>eaRows.push({User:r.user,Role:rb.role,Privilege:e.n,Priority:e.p,Category:e.cat}));
+          }else{
+            eaRows.push({User:r.user,Role:rb.role,Privilege:"",Priority:"",Category:""});
+          }
+        });
+      });
+      if(eaRows.length){
+        const capped=eaRows.slice(0,CAP);
+        if(eaRows.length>CAP)toast(`Role-Privilege Detail sheet capped at ${CAP.toLocaleString()} rows (${eaRows.length.toLocaleString()} total) to keep the file a manageable size — all summary/finding sheets still reflect the full dataset.`,false);
+        addSheet(wb,used,"P - Role-Privilege Detail",capped);
+      }
+    }
+
+    if(wb.SheetNames.length===0){
+      addSheet(wb,used,"Annexure A - All Users",allUsersRows.length?allUsersRows:[{Note:"No data"}]);
+    }
+
+    const fname=`access_governance_annexures_${sys}_${new Date().toISOString().slice(0,10)}.xlsx`;
+    let wbout;
+    try{
+      wbout=XLSX.write(wb,{bookType:"xlsx",type:"array"});
+    }catch(writeErr){
+      console.error(writeErr);
+      const totalRows=wb.SheetNames.reduce((s,n)=>s+(XLSX.utils.sheet_to_json(wb.Sheets[n]).length||0),0);
+      toast(`Excel export failed while assembling the file (${writeErr.message}) — the workbook likely grew too large (~${totalRows.toLocaleString()} rows across ${wb.SheetNames.length} sheets) for the browser to serialize in one pass. Try running the analysis on a smaller slice of users, or ask for a lighter export mode.`,true);
+      return;
+    }
+    const blob=new Blob([wbout],{type:"application/octet-stream"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    a.href=url;a.download=fname;
+    document.body.appendChild(a);a.click();
+    setTimeout(()=>{document.body.removeChild(a);URL.revokeObjectURL(url);},1000);
+    toast(`Exported ${wb.SheetNames.length} annexure tabs to ${fname}`,false);
+  }catch(err){
+    console.error(err);
+    toast("Excel export failed: "+err.message,true);
+  }
+}
+function expHTML(){
+  const s=sys==="pmweb"?"PMWeb":"Oracle Fusion";
+  const assessment=sys==="pmweb"?pmAssessment:orAssessment;
+  const rows=results.map(r=>`<tr><td>${r.user}</td><td>${r.roles}</td><td>${r.risk}</td><td>${(r.allPrivileges||r.privileges||[]).slice(0,15).join(", ")}</td></tr>`).join("");
+  const findingsHtml=(assessment&&assessment.narrativeFindings&&assessment.narrativeFindings.length)?`<h3>Audit Findings</h3>${assessment.narrativeFindings.map(f=>`<div style="margin-bottom:14px"><b>${f.title}</b> — ${f.risk} (${f.affectedUsers.length} affected)<br>Affected: ${joinCapped(f.affectedUsers.map(u=>u.userid),", ",300)}<br>Impact: ${f.impact}<br>Recommendation: ${f.recommendation}</div>`).join("")}`:"";
+  const html=`<html><head><style>body{font-family:sans-serif;font-size:13px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #e2e8f0;padding:8px}th{background:#f1f5f9;font-weight:600}</style></head><body><h2>Access Governance — ${s} — ${new Date().toLocaleDateString()}</h2>${findingsHtml}<h3>User-Level Access</h3><table><thead><tr><th>User</th><th>Role</th><th>Severity</th><th>Privilege Names</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([html],{type:"text/html"}));a.download=`access_governance_${sys}.html`;a.click();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// AI REPORT INSTRUCTIONS — packages current PAM findings + a prompt
+// so Claude (or any AI platform) can generate a polished PDF report.
+// ═══════════════════════════════════════════════════════════════
+function buildPAMReportData(){
+  const sysLabel = sys==="pmweb" ? "PMWeb" : "Oracle Fusion";
+  const assessment = sys==="pmweb" ? pmAssessment : orAssessment;
+  const summary = sys==="pmweb" ? (assessment&&assessment.summary) : (assessment&&assessment.executiveSummary);
+
+  const critUsers = results.filter(r=>r.risk==="Critical");
+  const highUsers = results.filter(r=>r.risk==="High");
+  const medUsers  = results.filter(r=>r.risk==="Medium");
+  const lowUsers  = results.filter(r=>r.risk==="Low");
+  const safeUsers = results.filter(r=>r.risk==="Safe");
+
+  // Cap the per-user detail list for very large datasets — the Excel
+  // Annexures export always has full per-user detail regardless of this cap.
+  const USER_CAP = 800;
+  const userData = results.slice(0,USER_CAP).map(r=>({
+    user:r.user, role:r.roles, risk:r.risk,
+    forms:r.forms||undefined,
+    privileges:(r.allPrivileges||r.privileges||[]).slice(0,25),
+    recommendation:r.recommendation||""
+  }));
+  const usersTruncatedNote = results.length>USER_CAP
+    ? `Showing ${USER_CAP} of ${results.length} users in this summary — the Excel Annexures export has full per-user detail.`
+    : undefined;
+
+  const narrativeFindings = (assessment&&assessment.narrativeFindings||[]).map(f=>({
+    title:f.title, risk:f.risk, impact:f.impact, recommendation:f.recommendation,
+    affectedCount:f.affectedUsers.length,
+    affectedUsers:f.affectedUsers.slice(0,50).map(u=>u.userid)
+  }));
+
+  let formClassification, combinedPrivilegedAccess, governanceNotes, riskyInternalAccess;
+  let criticalDrivers, highDrivers;
+  if(sys==="pmweb"){
+    const classified=buildPMPrivilegedAccessClassification(results);
+    formClassification = classified.filter(c=>c.highestRank>=2).map(c=>({
+      user:c.user, group:c.group, classification:c.highestTier,
+      combinedPrivilegedAccess:c.combined,
+      drivingForms:c.drivingForms.map(f=>`${f.formType?`[${f.formType}] `:""}${f.form}: ${f.perm}`)
+    }));
+    // Separate, focused list of just the cross-form escalation cases — the
+    // highest-priority PMWeb finding category — so an AI report generator
+    // can call these out without re-deriving them from the full classification.
+    combinedPrivilegedAccess = classified.filter(c=>c.combined).map(c=>({
+      user:c.user, group:c.group, classification:c.highestTier,
+      criticalForms:(c.criticalForms||[]).map(f=>`${f.formType?`[${f.formType}] `:""}${f.form} (${f.tier})`)
+    }));
+    riskyInternalAccess = (pmAssessment&&pmAssessment.riskyInternal) || {};
+    governanceNotes = {
+      approvedInternalDomains: govNotes.orgDomain||"",
+      totalUserRecords: govNotes.allCount, activeUsers: govNotes.activeCount,
+      inactiveUsers: govNotes.inactiveCount, blankGroupUsers: govNotes.blankGroupCount
+    };
+  } else {
+    criticalDrivers = ((orAssessment&&orAssessment.criticalDrivers)||[]).slice(0,15);
+    highDrivers = ((orAssessment&&orAssessment.highDrivers)||[]).slice(0,15);
+  }
+
+  return { sysLabel, data: {
+    system: sysLabel,
+    generatedAt: new Date().toISOString(),
+    summary: summary || {},
+    riskCounts: { critical:critUsers.length, high:highUsers.length, medium:medUsers.length, low:lowUsers.length, safe:safeUsers.length },
+    narrativeFindings,
+    formLevelPrivilegedAccessClassification: formClassification,
+    combinedPrivilegedAccess,
+    riskyInternalAccess,
+    governanceNotes,
+    criticalDrivers,
+    highDrivers,
+    userLevelAccess: userData,
+    usersTruncatedNote
+  }};
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PLAIN JSON EXPORT — for attaching directly to a Claude conversation
+// (or any AI platform / downstream tool) without the instructions text.
+// ═══════════════════════════════════════════════════════════════
+function exportJSONForClaude(){
+  if(!results||!results.length){toast("Run an analysis first, then export JSON.",true);return;}
+  const {sysLabel, data} = buildPAMReportData();
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:"application/json"}));
+  a.download=`PAM_${sysLabel.replace(/\s+/g,'_')}_Findings.json`;
+  a.click();
+  toast("JSON findings exported — attach to a Claude chat and ask it to generate a report");
+}
+
+function exportAIReportInstructions(){
+  if(!results||!results.length){toast("Run an analysis first, then generate AI report instructions.",true);return;}
+  const {sysLabel, data} = buildPAMReportData();
+  const dataJSON = JSON.stringify(data, null, 2);
+
+  const instructions = `PRIVILEGED ACCESS MANAGEMENT (PAM) AUDIT REPORT — AI GENERATION INSTRUCTIONS
+System analyzed: ${sysLabel}
+Generated: ${new Date().toLocaleString()}
+
+═══════════════════════════════════════════════════════════════
+HOW TO USE THIS FILE
+═══════════════════════════════════════════════════════════════
+Upload or paste this entire file to Claude (claude.ai) or another AI assistant with
+document/PDF generation capability, then ask it to "generate the PDF report described
+in these instructions." Everything the AI needs — the raw findings data and the report
+structure/formatting requirements — is included below.
+
+═══════════════════════════════════════════════════════════════
+TASK
+═══════════════════════════════════════════════════════════════
+Produce a professional, audit-ready PDF report (or a Word document suitable for
+conversion to PDF) summarizing the Privileged Access Management (PAM) / access
+governance findings provided in the JSON data block at the end of this file. The
+audience is internal audit leadership, IT security, and process owners — write in a
+formal, objective, evidence-based audit tone. Do not editorialize beyond what the data
+supports, and never invent a finding, count, or username not present in the JSON.
+
+═══════════════════════════════════════════════════════════════
+REQUIRED REPORT STRUCTURE
+═══════════════════════════════════════════════════════════════
+1. COVER PAGE
+   - Title: "Privileged Access Management (PAM) Review — ${sysLabel}"
+   - Subtitle: report date, "Confidential — Internal Audit Use Only"
+
+2. EXECUTIVE SUMMARY (half page)
+   - Total users analyzed, breakdown by risk level (Critical/High/Medium/Low/Safe)
+   - One-paragraph plain-language summary of overall privileged-access risk posture
+   - Top 3–5 highest-priority findings requiring immediate attention (pull from
+     narrativeFindings, prioritizing Critical risk)
+
+3. METHODOLOGY (short section)
+   - State plainly what was analyzed based on what's in the JSON
+
+4. RISK DISTRIBUTION SUMMARY TABLE
+   - One row per risk level with user counts and % of total
+
+5. KEY AUDIT FINDINGS (one subsection per entry in narrativeFindings)
+   For each finding: title, risk level, business impact, number of affected users,
+   a representative sample of affected usernames, and the recommended remediation.
+
+${sys==="pmweb"?`6. FORM-LEVEL PRIVILEGED ACCESS CLASSIFICATION (PMWeb only)
+   - Table: User, Group, Classification tier, Combined Privileged Access (Yes/No),
+     Driving Form(s)
+   - Call out "Combined Privileged Access = Yes" rows as the highest-priority segment —
+     these are users with Admin-Equivalent or higher access on 2+ critical financial
+     forms simultaneously (a cross-form segregation-of-duties escalation)
+
+7.`:`6.`} DETAILED USER-LEVEL ACCESS TABLE
+   - Table: User, Role/Group, Risk Level, Privilege/Access summary (truncate long
+     privilege lists with "+N more"), Recommendation
+   - Sort Critical first, then High, Medium, Low, Safe
+
+${sys==="pmweb"?"8":"7"}. RECOMMENDATIONS
+   - Prioritized, actionable list tied directly to the findings above
+   - Include a suggested access-recertification cadence
+
+${sys==="pmweb"?"9":"8"}. APPENDIX
+   - Full user-level access list in tabular form for audit trail completeness
+
+FORMATTING REQUIREMENTS:
+- Use clear headers/subheaders matching the sections above
+- Use tables wherever findings or user lists are shown — not paragraphs of prose
+- Bold or color-flag Critical/High risk labels for scannability if the output format
+  supports it
+- Do not fabricate any finding, number, or detail not present in the JSON data below
+
+═══════════════════════════════════════════════════════════════
+FINDINGS DATA (JSON)
+═══════════════════════════════════════════════════════════════
+${dataJSON}
+`;
+
+  const a2=document.createElement("a");
+  a2.href=URL.createObjectURL(new Blob([instructions],{type:"text/plain"}));
+  a2.download=`PAM_${sysLabel.replace(/\s+/g,'_')}_AI_Report_Instructions.txt`;
+  a2.click();
+  toast("AI report instructions downloaded — upload to Claude or another AI to generate the PDF");
+}
+
+// ─── PMWEB FORM-LEVEL PRIVILEGED ACCESS CLASSIFICATION ────────
+// Classifies each user's highest form-level permission on any system or
+// custom form into a privilege tier, and flags "Combined Privileged Access"
+// where a user holds Admin-Equivalent (or higher) rights on 2+ of the
+// defined critical/financial forms simultaneously (e.g. Commitment,
+// Commitment CO, IPC/Progress Invoices, Budgets, A/P Payments, Journal
+// Entries, Cost Ledger) — a cross-form segregation-of-duties escalation.
+//
+// Tiers (highest to lowest):
+//   Full Control / Administrator Access — explicit Full Control / admin
+//     wording in the permission value
+//   Privileged Access                   — Create + Edit + Delete together
+//   Admin-Equivalent Access             — Edit + Delete together (no Create)
+//   Elevated Access (Create + Edit)     — Create + Edit, no Delete
+//   Edit Access                         — Edit only
+//   View-Only Access                    — View only
+function parsePMPermissionTier(permRaw){
+  const p=String(permRaw||"").replace(/\u00A0/g," ").replace(/\s+/g," ").trim();
+  if(!p)return{tier:"No Access",rank:0};
+  const pl=p.toLowerCase();
+  if(["none","-","n/a","no access","no","0","false"].includes(pl))return{tier:"No Access",rank:0};
+  const hasFull=/full[\s\-_]*control|full[\s\-_]*access|all[\s\-_]*access|administrator/.test(pl);
+  if(hasFull)return{tier:"Full Control / Administrator Access",rank:5};
+  const hasCreate=/creat|add|insert/.test(pl);
+  const hasEdit=/edit|modify|updat|writ/.test(pl);
+  const hasDelete=/delet|remov/.test(pl);
+  const hasView=/view|read/.test(pl);
+  if(hasCreate&&hasEdit&&hasDelete)return{tier:"Privileged Access",rank:4};
+  if(pl==="delete"||(hasEdit&&hasDelete))return{tier:"Admin-Equivalent Access",rank:3};
+  if(hasCreate&&hasEdit)return{tier:"Elevated Access (Create + Edit)",rank:2};
+  if(hasEdit)return{tier:"Edit Access",rank:1.5};
+  if(hasView)return{tier:"View-Only Access",rank:1};
+  return{tier:"Other / Unclassified",rank:0.5};
+}
+function buildPMPrivilegedAccessClassification(results){
+  const out=[];
+  (results||[]).forEach(r=>{
+    const source=(r.formAccess&&r.formAccess.length)?r.formAccess:(r.allPrivileges||[]).map(s=>{
+      // Fallback for any caller that only has the flattened string form
+      // (e.g. older cached results without formAccess).
+      const idx=s.indexOf(": ");
+      return{form:idx>=0?s.slice(0,idx):s,perm:idx>=0?s.slice(idx+2):"",formType:""};
+    });
+    const forms=source.map(a=>{
+      const t=parsePMPermissionTier(a.perm);
+      return{form:a.form,perm:a.perm,formType:a.formType||"",tier:t.tier,rank:t.rank};
+    }).filter(f=>f.rank>0);
+    if(!forms.length)return;
+    const highestRank=Math.max(...forms.map(f=>f.rank));
+    const highestTier=forms.find(f=>f.rank===highestRank).tier;
+    const drivingForms=forms.filter(f=>f.rank===highestRank);
+    const criticalFormsRaw=forms.filter(f=>f.rank>=3&&moduleIsFinancial(f.form));
+    const criticalForms=[...new Map(criticalFormsRaw.map(f=>[f.form.toLowerCase(),f])).values()];
+    const combined=criticalForms.length>=2;
+    out.push({user:r.user,group:r.roles,highestTier,highestRank,drivingForms,combined,criticalForms,allForms:forms});
+  });
+  return out;
+}
+function renderPMPrivilegedAccess(){
+  const slot=document.getElementById("pm-priv-slot");
+  if(!slot)return;
+  if(sys!=="pmweb"||!results||!results.length){slot.innerHTML="";return;}
+  const rows=buildPMPrivilegedAccessClassification(results);
+  const tierCounts={"Full Control / Administrator Access":0,"Privileged Access":0,"Admin-Equivalent Access":0,"Elevated Access (Create + Edit)":0};
+  let combinedCount=0;
+  rows.forEach(r=>{ if(tierCounts.hasOwnProperty(r.highestTier))tierCounts[r.highestTier]++; if(r.combined)combinedCount++; });
+
+  const kpiHtml=`<div class="kpi-row" style="grid-template-columns:repeat(5,1fr);margin-bottom:14px">
+    <div class="kpi kc"><div class="kl">Full Control / Administrator</div><div class="kv">${tierCounts["Full Control / Administrator Access"]}</div></div>
+    <div class="kpi kc"><div class="kl">Privileged Access</div><div class="kv">${tierCounts["Privileged Access"]}</div></div>
+    <div class="kpi kh"><div class="kl">Admin-Equivalent Access</div><div class="kv">${tierCounts["Admin-Equivalent Access"]}</div></div>
+    <div class="kpi kp"><div class="kl">Elevated Access (Create+Edit)</div><div class="kv">${tierCounts["Elevated Access (Create + Edit)"]}</div></div>
+    <div class="kpi kc"><div class="kl">Combined Privileged Access</div><div class="kv">${combinedCount}</div></div>
+  </div>`;
+
+  const tableRows=rows.filter(r=>r.highestRank>=2).sort((a,b)=>b.highestRank-a.highestRank||a.user.localeCompare(b.user));
+  const tblA=tableRows.length?tableRows.map(r=>`<tr>
+      <td style="font-weight:600">${esc(r.user)}</td>
+      <td style="font-size:12px;color:var(--text2)">${esc(r.group)}</td>
+      <td><span class="badge ${r.highestRank>=5?"Critical":r.highestRank>=3?"High":"Low"}">${esc(r.highestTier)}</span>${r.combined?' <span class="chip x">Combined</span>':""}</td>
+      <td><div class="priv-list">${r.drivingForms.map(f=>`• ${f.formType?`<span class="chip t">${esc(f.formType)}</span> `:""}${esc(f.form)}: ${esc(f.perm)}`).join("<br>")}</div></td>
+      <td><div class="priv-list">${(r.allForms||[]).map(f=>`• ${f.formType?`<span class="chip t">${esc(f.formType)}</span> `:""}${esc(f.form)}: ${esc(f.perm)}`).join("<br>")}</div></td>
+    </tr>`).join(""):`<tr><td colspan="5" style="text-align:center;padding:1.5rem;color:var(--text2)">No elevated form-level access found</td></tr>`;
+
+  const combinedRows=rows.filter(r=>r.combined).sort((a,b)=>a.user.localeCompare(b.user));
+  const tblB=combinedRows.length?combinedRows.map(r=>`<tr>
+      <td style="font-weight:600">${esc(r.user)}</td>
+      <td style="font-size:12px;color:var(--text2)">${esc(r.group)}</td>
+      <td><div class="priv-list">${r.criticalForms.map(f=>`• ${f.formType?`<span class="chip t">${esc(f.formType)}</span> `:""}${esc(f.form)} — ${esc(f.tier)} (${esc(f.perm)})`).join("<br>")}</div></td>
+      <td><span class="badge Critical">${esc(r.highestTier)}</span></td>
+    </tr>`).join(""):`<tr><td colspan="4" style="text-align:center;padding:1.5rem;color:var(--text2)">No users with elevated access across multiple critical forms</td></tr>`;
+
+  slot.innerHTML=`
+    <div class="sh" style="margin-top:6px">Form-Level Privileged Access Classification (PMWeb)</div>
+    <div class="note" style="margin-bottom:10px">Compares User → Group (User Access Report) against Group → Form → Level of Access (Group Forms Access matrix, both the <b>System</b> and <b>Custom</b> tabs) to classify each user's highest form-level permission. <b>Full Control / Administrator Access</b> = explicit Full Control/admin-level permission. <b>Privileged Access</b> = Create + Edit + Delete held together on one form. <b>Admin-Equivalent Access</b> = Edit + Delete held on one form (without Create). <b>Elevated Access</b> = Create + Edit only (no Delete). <b>Combined Privileged Access</b> = Admin-Equivalent or higher access held simultaneously on 2 or more critical/financial forms (A/P Payments, Journal Entries, Cost Ledger, Commitments, Commitment CO, IPC, Progress Invoices, Budgets, Budget Requests), across either tab — a cross-form segregation-of-duties escalation.</div>
+    ${kpiHtml}
+    <div class="lbl" style="margin-bottom:6px">Users by Highest Privilege Tier</div>
+    <div class="tbl-wrap" style="margin-bottom:18px;max-height:400px;overflow:auto">
+      <table><thead><tr><th>User</th><th>Group</th><th>Classification</th><th>Form(s) Driving Classification</th><th>All Forms Accessed</th></tr></thead><tbody>${tblA}</tbody></table>
+    </div>
+    <div class="lbl" style="margin-bottom:6px">Combined Privileged Access — Elevated Rights Across Multiple Critical Forms</div>
+    <div class="tbl-wrap" style="margin-bottom:18px;max-height:400px;overflow:auto">
+      <table><thead><tr><th>User</th><th>Group</th><th>Critical Forms Held</th><th>Highest Classification</th></tr></thead><tbody>${tblB}</tbody></table>
+    </div>`;
+}
+
+document.getElementById("opt-internal-auto").addEventListener("change",function(){
+  document.getElementById("cfg-domains").disabled=this.checked;
+});
+buildFlagFilter();
+toggleChartBoxes();
+updateTableHeader();
+</script>
+</body>
+</html>

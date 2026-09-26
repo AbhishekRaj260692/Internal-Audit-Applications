@@ -1,0 +1,24 @@
+{
+  "routes": [
+    { "route": "/api/*", "allowedRoles": ["authenticated"] },
+    { "route": "/*.html", "allowedRoles": ["authenticated"], "headers": { "Cache-Control": "no-cache" } },
+    { "route": "/", "allowedRoles": ["authenticated"] },
+    { "route": "/login", "rewrite": "/.auth/login/aad" },
+    { "route": "/logout", "rewrite": "/.auth/logout" },
+    { "route": "/.auth/login/github", "statusCode": 404 },
+    { "route": "/.auth/login/twitter", "statusCode": 404 }
+  ],
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["*.html", "*.css", "*.js", "*.png", "*.jpg", "*.svg", "*.ico", "/api/*"]
+  },
+  "mimeTypes": {
+    ".html": "text/html"
+  },
+  "responseOverrides": {
+    "401": {
+      "redirect": "/.auth/login/aad?post_login_redirect_uri=.referrer",
+      "statusCode": 302
+    }
+  }
+}

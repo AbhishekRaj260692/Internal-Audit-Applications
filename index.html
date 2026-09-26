@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Internal Audit — Information Technology Audit Application Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#f7f8fa; --panel:#ffffff; --panel2:#f3f5f8; --border:#e5e9ef;
+  --text:#20262f; --muted:#68727e; --muted2:#98a1ac;
+  --sod:#ea580c; --gov:#0e7490; --log:#0d9488;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--text);
+  font-family:'Space Grotesk',sans-serif;
+  min-height:100vh; overflow-x:hidden;
+}
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    linear-gradient(rgba(15,23,32,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(15,23,32,.025) 1px,transparent 1px);
+  background-size:64px 64px;
+}
+header{
+  border-bottom:1px solid var(--border);
+  padding:22px 0;
+  position:relative;z-index:1;
+}
+.hdr-inner{max-width:1180px;margin:0 auto;padding:0 28px;display:flex;align-items:center;gap:14px}
+.hdr-mark{width:38px;height:38px;border:1px solid var(--border);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;font-size:17px;background:var(--panel)}
+.hdr-title{font-size:15px;font-weight:600;letter-spacing:.2px}
+.hdr-sub{font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace;letter-spacing:.4px;margin-top:2px}
+
+main{max-width:1180px;margin:0 auto;padding:64px 28px 100px;position:relative;z-index:1}
+
+.eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:2.5px;
+  color:var(--muted); text-transform:uppercase; margin-bottom:18px}
+h1{font-size:clamp(30px,4.2vw,48px);font-weight:700;letter-spacing:-1px;line-height:1.08;max-width:780px}
+h1 em{font-style:normal;color:var(--sod)}
+.lede{color:var(--muted);font-size:15px;line-height:1.7;max-width:600px;margin-top:20px}
+
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:56px}
+@media(max-width:920px){.grid{grid-template-columns:1fr}}
+
+.card{
+  position:relative; background:var(--panel); border:1px solid var(--border);
+  border-radius:14px; padding:28px 26px; overflow:hidden;
+  text-decoration:none; color:inherit; display:flex; flex-direction:column;
+  min-height:290px; transition:transform .18s ease, border-color .18s ease, background .18s ease;
+}
+.card:hover{transform:translateY(-3px); background:var(--panel2)}
+.card::before{
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background:var(--accent);
+}
+.card:hover{border-color:var(--accent)}
+
+.card-num{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--muted2);letter-spacing:1px;margin-bottom:18px}
+.card-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+  font-size:20px;margin-bottom:20px;background:color-mix(in srgb, var(--accent) 14%, transparent);
+  border:1px solid color-mix(in srgb, var(--accent) 35%, transparent)}
+.card-title{font-size:19px;font-weight:600;letter-spacing:-.2px;margin-bottom:9px}
+.card-desc{font-size:12.5px;color:var(--muted);line-height:1.65;flex:1}
+.card-tags{display:flex;flex-wrap:wrap;gap:6px;margin:16px 0}
+.tag{font-family:'IBM Plex Mono',monospace;font-size:9.5px;padding:3px 8px;border-radius:4px;
+  background:rgba(15,23,32,.035);border:1px solid var(--border);color:var(--muted);letter-spacing:.4px}
+.card-cta{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--accent);
+  margin-top:auto; padding-top:14px; border-top:1px solid var(--border)}
+.card-cta .arrow{transition:transform .18s ease}
+.card:hover .card-cta .arrow{transform:translateX(4px)}
+
+.c-sod{--accent:var(--sod)}
+.c-gov{--accent:var(--gov)}
+.c-log{--accent:var(--log)}
+
+.foot-note{
+  margin-top:64px; padding:20px 24px; border:1px solid var(--border); border-radius:10px;
+  background:var(--panel); font-size:12px; color:var(--muted); line-height:1.7;
+}
+.foot-note b{color:var(--text)}
+.foot-note code{font-family:'IBM Plex Mono',monospace;background:rgba(15,23,32,.05);padding:1px 6px;border-radius:4px;color:var(--text)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-inner">
+    <div class="hdr-mark">🛡️</div>
+    <div>
+      <div class="hdr-title">Internal Audit — IT Audit Application Hub</div>
+      <div class="hdr-sub">INFORMATION TECHNOLOGY AUDIT · APPLICATION HUB</div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="eyebrow">Application Hub</div>
+  <h1>Three tools. <em>One</em> place to run them.</h1>
+  <p class="lede">Select a tool below to open it. Each one runs entirely in your browser — uploads and analysis never leave this page, and nothing is sent to an external server.</p>
+
+  <div class="grid">
+
+    <a class="card c-sod" href="sod-analyzer.html">
+      <div class="card-num">01 / SOD</div>
+      <div class="card-icon">⚡</div>
+      <div class="card-title">SOD Conflict Analyzer</div>
+      <div class="card-desc">Segregation-of-duties analysis across Oracle Fusion and MyCom. Detects user-level and role-level conflicts against 84 Oracle rules and 110 MyCom window-level rules, plus end-to-end P2P critical access. Includes a Single-User Quick Check for spot-checking one person's access, and a live, searchable RBAC Matrix viewer for Oracle data.</div>
+      <div class="card-tags"><span class="tag">Oracle Fusion</span><span class="tag">MyCom</span><span class="tag">SOD</span></div>
+      <div class="card-cta">Open tool <span class="arrow">→</span></div>
+    </a>
+
+    <a class="card c-gov" href="access-governance.html">
+      <div class="card-num">02 / PAM</div>
+      <div class="card-icon">🔐</div>
+      <div class="card-title">Access Governance Engine</div>
+      <div class="card-desc">Privileged access analysis for PMWeb and Oracle Fusion. PMWeb includes a 6-tier Form-Level Privileged Access Classification with cross-form Combined Privileged Access detection and organization-tailored risk findings; Oracle matches against a curated privilege library.</div>
+      <div class="card-tags"><span class="tag">PMWeb</span><span class="tag">Oracle Fusion</span><span class="tag">PAM</span></div>
+      <div class="card-cta">Open tool <span class="arrow">→</span></div>
+    </a>
+
+    <a class="card c-log" href="log-analyzer.html">
+      <div class="card-num">03 / LOG</div>
+      <div class="card-icon">⚠</div>
+      <div class="card-title">LogShield Pro — Log Analyzer</div>
+      <div class="card-desc">Unified Windows Event Log &amp; Salesforce Classic audit-trail analysis. 37 MITRE ATT&amp;CK-mapped Windows rules plus 79 Salesforce rules (including the SF-C001–SF-C029 unauthorized-change matrix), with a combined findings dashboard.</div>
+      <div class="card-tags"><span class="tag">Security</span><span class="tag">Event Logs</span><span class="tag">Offline</span></div>
+      <div class="card-cta">Open tool <span class="arrow">→</span></div>
+    </a>
+
+  </div>
+
+  <div class="foot-note">
+    <b>Hosting:</b> this hub and all three tools are static HTML/JS files with no server-side dependency — deploy the whole folder as-is on <b>Azure Static Web Apps</b> (or any static host). Routing between pages is plain relative links, so no server config is required beyond serving the files. See <code>README.md</code> in this package for deployment steps.
+  </div>
+</main>
+
+</body>
+</html>
